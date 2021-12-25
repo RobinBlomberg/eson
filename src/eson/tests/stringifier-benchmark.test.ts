@@ -13,16 +13,14 @@ const runBenchmark = () => {
   console.info(
     'ESON.stringify',
     benchmark(() => {
-      ESON.stringify(mock);
+      ESON.stringify(mock, null, 2);
     }, RUN_COUNT),
   );
 
   console.info(
     'JSON.stringify',
     benchmark(() => {
-      JSON.stringify(mock, (key, value) => {
-        return value instanceof Date ? value.valueOf() : value;
-      });
+      JSON.stringify(mock, null, 2);
     }, RUN_COUNT),
   );
 };

@@ -1,5 +1,6 @@
 /* eslint-disable no-sparse-arrays */
 /* eslint-disable no-new-wrappers */
+
 import { strictEqual } from 'assert';
 import { stringify } from '../stringifier';
 
@@ -72,3 +73,45 @@ strictEqual(stringify(new Array([, , 'bar'])), "[[,,'bar']]");
 strictEqual(stringify(new Array([, ,])), '[new Array(2)]');
 
 strictEqual(stringify(new Array(3)), 'new Array(3)');
+
+// space:
+{
+  strictEqual(stringify({}, null, 2), '({})');
+
+  strictEqual(stringify({ foo: 'bar' }, null, 2), "({\n  foo: 'bar'\n})");
+
+  strictEqual(
+    stringify({ foo: 'bar', qux: null }, null, 2),
+    "({\n  foo: 'bar',\n  qux: null\n})",
+  );
+
+  strictEqual(
+    stringify(
+      { foo: 'bar', qux: { baz: 42, list: [1, new Date(2345235), [3]] } },
+      null,
+      2,
+    ),
+    '({\n' +
+      "  foo: 'bar',\n" +
+      '  qux: {\n' +
+      '    baz: 42,\n' +
+      '    list: [\n' +
+      '      1,\n' +
+      '      new Date(2345235),\n' +
+      '      [3]\n' +
+      '    ]\n' +
+      '  }\n' +
+      '})',
+  );
+
+  strictEqual(stringify([], null, 2), '[]');
+
+  strictEqual(stringify([1], null, 2), '[1]');
+
+  strictEqual(stringify([1, 2], null, 2), '[\n  1,\n  2\n]');
+
+  strictEqual(
+    stringify([42, 'foo', undefined], null, 2),
+    "[\n  42,\n  'foo',\n  undefined\n]",
+  );
+}
