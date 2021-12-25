@@ -78,6 +78,8 @@ strictEqual(stringify(new Array(3)), 'new Array(3)');
 {
   strictEqual(stringify({}, null, 2), '({})');
 
+  strictEqual(stringify([{}], null, 2), '[\n  {}\n]');
+
   strictEqual(stringify({ foo: 'bar' }, null, 2), "({\n  foo: 'bar'\n})");
 
   strictEqual(
@@ -113,5 +115,22 @@ strictEqual(stringify(new Array(3)), 'new Array(3)');
   strictEqual(
     stringify([42, 'foo', undefined], null, 2),
     "[\n  42,\n  'foo',\n  undefined\n]",
+  );
+
+  strictEqual(
+    stringify([{ foo: 'bar' }], null, 2),
+    "[\n  {\n    foo: 'bar'\n  }\n]",
+  );
+
+  strictEqual(
+    stringify([{ foo: ['bar', {}] }], null, 2),
+    '[\n' +
+      '  {\n' +
+      '    foo: [\n' +
+      "      'bar',\n" +
+      '      {}\n' +
+      '    ]\n' +
+      '  }\n' +
+      ']',
   );
 }

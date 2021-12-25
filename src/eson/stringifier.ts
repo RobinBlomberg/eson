@@ -18,7 +18,8 @@ class Stringifier {
   }
 
   private stringifyElements(elements: unknown[], space: number, depth: number) {
-    const multiline = Boolean(space) && elements.length >= 2;
+    const multiline =
+      Boolean(space) && (elements[0] instanceof Object || elements.length >= 2);
     const indent1 = multiline ? ' '.repeat(space * depth) : '';
     const indent2 = multiline ? ' '.repeat(space * (depth + 1)) : '';
     let string = '';
@@ -89,9 +90,9 @@ class Stringifier {
 
       if (space && keys.length >= 1) {
         string += '\n';
+        string += indent1;
       }
 
-      string += indent1;
       string += '}';
     }
 
