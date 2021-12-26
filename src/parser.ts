@@ -1,5 +1,5 @@
 import { stringifyString } from './stringify-string';
-import { ParserOptions, Pattern, UnaryOperator } from './types';
+import { ParserOptions, Pattern } from './types';
 
 const globals: Record<string, unknown> = {
   Array,
@@ -69,152 +69,136 @@ const patterns = {
   },
 };
 
-class Parser {
-  data = '';
-  errors: unknown[] = [];
-  index = 0;
-  isStart = true;
-  options: ParserOptions = {};
+export const parse = (data: string, options: ParserOptions = {}) => {
+  const errors: unknown[] = [];
+  let isStart = true;
+  let index = 0;
 
-  private _consume() {
-    this.isStart = false;
+  const consume = () => {
+    isStart = false;
 
-    if (this.index >= this.data.length) {
-      this._error();
+    if (index >= data.length) {
+      throwSyntaxError();
     }
 
-    return this.data[this.index++];
-  }
+    return data[index++];
+  };
 
-  private _consumeChar<C extends string>(pattern: C) {
-    const char = this.data[this.index];
-    return char === pattern ? (this._consume() as C) : this._error();
-  }
+  const consumeChar = <C extends string>(pattern: C) => {
+    const char = data[index];
+    return char === pattern ? (consume() as C) : throwSyntaxError();
+  };
 
-  private _consumeMany(length = 1) {
-    this.isStart = false;
+  const consumeMany = (length: number) => {
+    isStart = false;
 
-    if (this.index + length > this.data.length) {
-      this._error();
+    if (index + length > data.length) {
+      throwSyntaxError();
     }
 
-    const start = this.index;
-    this.index += length;
-    return this.data.slice(start, this.index);
-  }
+    const start = index;
+    index += length;
+    return data.slice(start, index);
+  };
 
-  private _consumePattern(pattern: Pattern) {
-    const char = this.data[this.index] ?? '';
-    return pattern(char) ? this._consume() : this._error();
-  }
+  const consumePattern = (pattern: Pattern) => {
+    const char = data[index] ?? '';
+    return pattern(char) ? consume() : throwSyntaxError();
+  };
 
-  private _error(): string {
-    if (this.data[this.index]) {
-      const character = stringifyString(this.data[this.index]!);
-      throw new SyntaxError(
-        `Unexpected character ${character} at index ${this.index}`,
-      );
-    } else {
-      throw new SyntaxError('Unexpected end of input');
-    }
-  }
-
-  private consumeIdentifier() {
+  const consumeIdentifier = () => {
     let name = '';
 
-    name += this._consumePattern(patterns.identifierStart);
+    name += consumePattern(patterns.identifierStart);
 
-    while (patterns.identifierTail(this.data[this.index] ?? '')) {
-      name += this._consume();
+    while (patterns.identifierTail(data[index] ?? '')) {
+      name += consume();
     }
 
     return name;
-  }
+  };
 
-  private consumeInteger(pattern: Pattern) {
+  const consumeInteger = (pattern: Pattern) => {
     let integer = '';
 
-    integer += this._consumePattern(pattern);
+    integer += consumePattern(pattern);
 
-    while (
-      pattern(this.data[this.index] ?? '') ||
-      this.data[this.index] === '_'
-    ) {
-      if (this.data[this.index] === '_') {
-        integer += this._consume();
+    while (pattern(data[index] ?? '') || data[index] === '_') {
+      if (data[index] === '_') {
+        integer += consume();
       }
 
-      integer += this._consumePattern(pattern);
+      integer += consumePattern(pattern);
     }
 
     return integer.replace(/_/g, '');
-  }
+  };
 
-  private getVariable(name: string): any {
+  const getVariable = (name: string): any => {
     if (globals[name] === undefined) {
-      this.errors.push(new ReferenceError(`${name} is not defined`));
+      errors.push(new ReferenceError(`${name} is not defined`));
       return undefined;
     }
 
     return globals[name];
-  }
+  };
 
-  private parseArrayExpression() {
-    this._consume();
+  const parseArrayExpression = () => {
+    consume();
 
-    return this.parseElements(']');
-  }
+    return parseElements(']');
+  };
 
-  private parseElements(closeChar: string) {
+  const parseElements = (closeChar: string) => {
     const elements: unknown[] = [];
     let i = 0;
 
-    this.parseSpace();
+    parseSpace();
 
-    while (this.data[this.index] !== closeChar) {
-      if (this.data[this.index] === ',') {
-        this._consume();
+    while (data[index] !== closeChar) {
+      if (data[index] === ',') {
+        consume();
         elements.length = ++i;
-        this.parseSpace();
+        parseSpace();
         continue;
       }
 
-      elements[i] = this.parseGroupExpression();
+      elements[i] = parseGroupExpression();
       i++;
 
-      this.parseSpace();
+      parseSpace();
 
-      if (this.data[this.index] === ',') {
-        this._consume();
-        this.parseSpace();
+      if (data[index] === ',') {
+        consume();
+        parseSpace();
       } else {
         break;
       }
     }
 
-    this._consumeChar(closeChar);
+    consumeChar(closeChar);
 
     return elements;
-  }
+  };
 
-  private parseGroupExpression(): any {
-    if (this.data[this.index] === '(') {
-      this._consume();
-      this.parseSpace();
+  const parseGroupExpression = (): any => {
+    if (data[index] === '(') {
+      consume();
+      parseSpace();
 
-      const value = this.parseGroupExpression();
+      const value = parseGroupExpression();
 
-      this.parseSpace();
-      this._consumeChar(')');
+      parseSpace();
+      consumeChar(')');
 
       return value;
     }
 
-    return this.parseValue();
-  }
+    return parseValue();
+  };
 
-  private parseIdentifier() {
-    const name = this.consumeIdentifier();
+  const parseIdentifier = () => {
+    const name = consumeIdentifier();
 
     switch (name) {
       case 'Infinity':
@@ -230,174 +214,174 @@ class Parser {
       case 'undefined':
         return undefined;
       case 'new':
-        return this.parseNewExpression();
+        return parseNewExpression();
       default:
-        this.errors.push(new ReferenceError(`${name} is not defined`));
+        errors.push(new ReferenceError(`${name} is not defined`));
         return undefined;
     }
-  }
+  };
 
-  private parseNewExpression() {
-    this.parseSpace();
+  const parseNewExpression = () => {
+    parseSpace();
 
-    const name = this.consumeIdentifier();
-    const Constructor = this.getVariable(name);
+    const name = consumeIdentifier();
+    const Constructor = getVariable(name);
 
-    this.parseSpace();
+    parseSpace();
 
     let args: unknown[] = [];
 
-    if (this.data[this.index] === '(') {
-      this._consume();
-      args = this.parseElements(')');
+    if (data[index] === '(') {
+      consume();
+      args = parseElements(')');
     }
 
     try {
       return new Constructor(...args);
     } catch (error: unknown) {
-      this.errors.push(error);
+      errors.push(error);
     }
 
     return undefined;
-  }
+  };
 
-  private parseNumberLiteral() {
-    const start = this.data[this.index];
+  const parseNumberLiteral = () => {
+    const start = data[index];
     let number = '';
 
     if (start === '-') {
-      number += this._consume();
+      number += consume();
     }
 
     if (start !== '.') {
       if (start === '0') {
-        number += this._consume();
+        number += consume();
 
-        const char = this.data[this.index];
+        const char = data[index];
         if (char === 'x' || char === 'X') {
-          number += this._consume();
-          number += this.consumeInteger(patterns.hexDigit);
+          number += consume();
+          number += consumeInteger(patterns.hexDigit);
           return Number(number);
         } else if (char === 'b' || char === 'B') {
-          number += this._consume();
-          number += this.consumeInteger(patterns.binaryDigit);
+          number += consume();
+          number += consumeInteger(patterns.binaryDigit);
           return Number(number);
         } else if (char === 'o' || char === 'O') {
-          number += this._consume();
-          number += this.consumeInteger(patterns.octalDigit);
+          number += consume();
+          number += consumeInteger(patterns.octalDigit);
           return Number(number);
         }
       } else {
-        number += this.consumeInteger(patterns.decimalDigit);
+        number += consumeInteger(patterns.decimalDigit);
       }
 
-      if (this.data[this.index] === 'n') {
-        this._consume();
+      if (data[index] === 'n') {
+        consume();
         return BigInt(number);
       }
     }
 
-    if (this.data[this.index] === '.') {
-      number += this._consume();
+    if (data[index] === '.') {
+      number += consume();
 
-      if (patterns.decimalDigit(this.data[this.index] ?? '')) {
-        number += this.consumeInteger(patterns.decimalDigit);
+      if (patterns.decimalDigit(data[index] ?? '')) {
+        number += consumeInteger(patterns.decimalDigit);
       }
 
       if (number.length === 1) {
-        this._error();
+        throwSyntaxError();
       }
     }
 
-    if (this.data[this.index] === 'e' || this.data[this.index] === 'E') {
-      number += this._consume();
+    if (data[index] === 'e' || data[index] === 'E') {
+      number += consume();
 
-      if (this.data[this.index] === '-' || this.data[this.index] === '+') {
-        number += this._consume();
+      if (data[index] === '-' || data[index] === '+') {
+        number += consume();
       }
 
-      number += this.consumeInteger(patterns.decimalDigit);
+      number += consumeInteger(patterns.decimalDigit);
     }
 
     return Number(number);
-  }
+  };
 
-  private parseObjectExpression() {
-    if (this.options.strict && this.isStart) {
-      this._error();
+  const parseObjectExpression = () => {
+    if (options.strict && isStart) {
+      throwSyntaxError();
     }
 
     const object: Record<string, unknown> = {};
 
-    this._consume();
-    this.parseSpace();
+    consume();
+    parseSpace();
 
-    while (this.data[this.index] !== '}') {
-      const key = patterns.valueStart(this.data[this.index] ?? '')
-        ? this.parseValue()
-        : this.consumeIdentifier();
+    while (data[index] !== '}') {
+      const key = patterns.valueStart(data[index] ?? '')
+        ? parseValue()
+        : consumeIdentifier();
 
-      this.parseSpace();
-      this._consumeChar(':');
-      this.parseSpace();
-      object[key] = this.parseGroupExpression();
-      this.parseSpace();
+      parseSpace();
+      consumeChar(':');
+      parseSpace();
+      object[key] = parseGroupExpression();
+      parseSpace();
 
-      if (this.data[this.index] === ',') {
-        this._consume();
-        this.parseSpace();
+      if (data[index] === ',') {
+        consume();
+        parseSpace();
       } else {
         break;
       }
     }
 
-    this.parseSpace();
-    this._consumeChar('}');
+    parseSpace();
+    consumeChar('}');
 
     return object;
-  }
+  };
 
-  private parseRegExpLiteral() {
-    this._consume();
+  const parseRegExpLiteral = () => {
+    consume();
 
     let source = '';
     let flags = '';
 
-    source += this._consumePattern(patterns.notFslash);
+    source += consumePattern(patterns.notFslash);
 
-    while (this.data[this.index] !== '/') {
-      if (this.data[this.index] === '\\') {
-        source += this._consumeMany(2);
+    while (data[index] !== '/') {
+      if (data[index] === '\\') {
+        source += consumeMany(2);
       }
 
-      if (this.data[this.index] === '[') {
-        source += this._consume();
+      if (data[index] === '[') {
+        source += consume();
 
-        while (this.data[this.index] !== ']') {
-          if (this.data[this.index] === '\\') {
-            source += this._consume();
+        while (data[index] !== ']') {
+          if (data[index] === '\\') {
+            source += consume();
           }
 
-          source += this._consume();
+          source += consume();
         }
 
-        source += this._consumeChar(']');
+        source += consumeChar(']');
       } else {
-        source += this._consumePattern(patterns.notFslash);
+        source += consumePattern(patterns.notFslash);
       }
     }
 
-    this._consumeChar('/');
+    consumeChar('/');
 
-    while (patterns.regExpFlag(this.data[this.index] ?? '')) {
-      flags += this._consume();
+    while (patterns.regExpFlag(data[index] ?? '')) {
+      flags += consume();
     }
 
     return new RegExp(source, flags);
-  }
+  };
 
-  private parseSingleCharacterEscapeSequence() {
-    switch (this.data[this.index]) {
+  const parseSingleCharacterEscapeSequence = () => {
+    switch (data[index]) {
       case '0':
         return '\0';
       case "'":
@@ -419,49 +403,42 @@ class Parser {
       default:
         return undefined;
     }
-  }
+  };
 
-  private parseSpace() {
-    const isStart = this.isStart;
+  const parseSpace = () => {
+    const wasStart = isStart;
     let space = '';
 
-    while (this.data[this.index]) {
-      if (patterns.space(this.data[this.index] ?? '')) {
-        space += this._consume();
+    while (data[index]) {
+      if (patterns.space(data[index] ?? '')) {
+        space += consume();
 
-        while (patterns.space(this.data[this.index] ?? '')) {
-          space += this._consume();
+        while (patterns.space(data[index] ?? '')) {
+          space += consume();
         }
-      } else if (this.data[this.index] === '/') {
-        if (this.data[this.index + 1] === '/') {
-          space += this._consumeMany(2);
+      } else if (data[index] === '/') {
+        if (data[index + 1] === '/') {
+          space += consumeMany(2);
 
-          while (
-            this.data[this.index] &&
-            this.data[this.index] !== '\n' &&
-            this.data[this.index] !== '\r'
-          ) {
-            space += this._consume();
+          while (data[index] && data[index] !== '\n' && data[index] !== '\r') {
+            space += consume();
           }
-        } else if (this.data[this.index + 1] === '*') {
-          space += this._consumeMany(2);
+        } else if (data[index + 1] === '*') {
+          space += consumeMany(2);
 
-          if (!this.data[this.index]) {
-            this._error();
+          if (!data[index]) {
+            throwSyntaxError();
           }
 
-          while (this.data[this.index]) {
-            if (
-              this.data[this.index] === '*' &&
-              this.data[this.index + 1] === '/'
-            ) {
-              space += this._consumeMany(2);
+          while (data[index]) {
+            if (data[index] === '*' && data[index + 1] === '/') {
+              space += consumeMany(2);
               break;
             } else {
-              space += this._consume();
+              space += consume();
 
-              if (!this.data[this.index]) {
-                this._error();
+              if (!data[index]) {
+                throwSyntaxError();
               }
             }
           }
@@ -473,63 +450,57 @@ class Parser {
       }
     }
 
-    this.isStart = isStart;
+    isStart = wasStart;
 
     return space;
-  }
+  };
 
-  private parseStringLiteral() {
-    const quote = this.data[this.index];
+  const parseStringLiteral = () => {
+    const quote = data[index];
 
     if (!quote) {
-      return this._error();
+      return throwSyntaxError();
     }
 
     let string = '';
 
-    this._consume();
+    consume();
 
-    while (this.data[this.index] !== quote) {
-      if (
-        (this.data[this.index] === '\n' || this.data[this.index] === '\r') &&
-        quote !== '`'
-      ) {
-        this._error();
-      } else if (this.data[this.index] === '\\') {
-        this._consume();
+    while (data[index] !== quote) {
+      if ((data[index] === '\n' || data[index] === '\r') && quote !== '`') {
+        throwSyntaxError();
+      } else if (data[index] === '\\') {
+        consume();
 
-        const char = this.parseSingleCharacterEscapeSequence();
+        const char = parseSingleCharacterEscapeSequence();
 
         if (char) {
           string += char;
-          this._consume();
-        } else if (
-          this.data[this.index] === '\n' ||
-          this.data[this.index] === '\r'
-        ) {
-          const cr = this.data[this.index] === '\r' ? this._consume() : '';
+          consume();
+        } else if (data[index] === '\n' || data[index] === '\r') {
+          const cr = data[index] === '\r' ? consume() : '';
           if (cr) {
-            if (this.data[this.index] === '\n') {
-              this._consume();
+            if (data[index] === '\n') {
+              consume();
             }
           } else {
-            this._consumeChar('\n');
+            consumeChar('\n');
           }
-        } else if (this.data[this.index] === 'u') {
+        } else if (data[index] === 'u') {
           let hex = '';
 
-          this._consume();
+          consume();
 
-          if (this.data[this.index] === '{') {
-            this._consume();
+          if (data[index] === '{') {
+            consume();
 
-            hex += this._consumePattern(patterns.hexDigit);
+            hex += consumePattern(patterns.hexDigit);
 
-            while (patterns.hexDigit(this.data[this.index] ?? '')) {
-              hex += this._consume();
+            while (patterns.hexDigit(data[index] ?? '')) {
+              hex += consume();
             }
 
-            this._consumeChar('}');
+            consumeChar('}');
 
             let value = parseInt(hex, 16);
 
@@ -546,108 +517,102 @@ class Parser {
               string += String.fromCodePoint(value);
             }
           } else {
-            hex += this._consumePattern(patterns.hexDigit);
-            hex += this._consumePattern(patterns.hexDigit);
-            hex += this._consumePattern(patterns.hexDigit);
-            hex += this._consumePattern(patterns.hexDigit);
+            hex += consumePattern(patterns.hexDigit);
+            hex += consumePattern(patterns.hexDigit);
+            hex += consumePattern(patterns.hexDigit);
+            hex += consumePattern(patterns.hexDigit);
 
             string += String.fromCodePoint(parseInt(hex, 16));
           }
-        } else if (this.data[this.index] === 'x') {
-          this._consume();
+        } else if (data[index] === 'x') {
+          consume();
 
           let hex = '';
 
-          hex += this._consumePattern(patterns.hexDigit);
-          hex += this._consumePattern(patterns.hexDigit);
+          hex += consumePattern(patterns.hexDigit);
+          hex += consumePattern(patterns.hexDigit);
 
           string += String.fromCodePoint(parseInt(hex, 16));
         } else {
-          string += this._consume();
+          string += consume();
         }
       } else if (
         quote === '`' &&
-        this.data[this.index] === '$' &&
-        this.data[this.index + 1] === '{'
+        data[index] === '$' &&
+        data[index + 1] === '{'
       ) {
-        this._consumeMany(2);
+        consumeMany(2);
 
-        string += this.parseGroupExpression();
+        string += parseGroupExpression();
 
-        this._consumeChar('}');
+        consumeChar('}');
       } else {
-        string += this._consume();
+        string += consume();
       }
     }
 
-    this._consumeChar(quote);
+    consumeChar(quote);
 
     return string;
-  }
+  };
 
-  private parseValue() {
-    switch (this.data[this.index]) {
+  const parseValue = () => {
+    switch (data[index]) {
       case '`':
       case '"':
       case "'": {
-        return this.parseStringLiteral();
+        return parseStringLiteral();
       }
       case '[': {
-        return this.parseArrayExpression();
+        return parseArrayExpression();
       }
       case '{': {
-        return this.parseObjectExpression();
+        return parseObjectExpression();
       }
       case '/': {
-        return this.parseRegExpLiteral();
+        return parseRegExpLiteral();
       }
       default: {
-        if (patterns.identifierStart(this.data[this.index] ?? '')) {
-          return this.parseIdentifier();
-        } else if (patterns.numberStart(this.data[this.index] ?? '')) {
-          return this.parseNumberLiteral();
+        if (patterns.identifierStart(data[index] ?? '')) {
+          return parseIdentifier();
+        } else if (patterns.numberStart(data[index] ?? '')) {
+          return parseNumberLiteral();
         }
 
-        return this._error();
+        return throwSyntaxError();
       }
     }
+  };
+
+  const throwSyntaxError = (): string => {
+    if (data[index]) {
+      const character = stringifyString(data[index]!);
+      throw new SyntaxError(
+        `Unexpected character ${character} at index ${index}`,
+      );
+    } else {
+      throw new SyntaxError('Unexpected end of input');
+    }
+  };
+
+  parseSpace();
+
+  // Fast path - empty input:
+  if (index === data.length) {
+    return undefined;
   }
 
-  parse(data: string, options: ParserOptions = {}) {
-    this.data = data;
-    this.errors = [];
-    this.index = 0;
-    this.isStart = true;
-    this.options = options;
+  const value = parseGroupExpression();
 
-    this.parseSpace();
+  parseSpace();
 
-    // Fast path - empty input:
-    if (this.index === this.data.length) {
-      return undefined;
-    }
-
-    const value = this.parseGroupExpression();
-
-    this.parseSpace();
-
-    if (this.index < this.data.length) {
-      this._error();
-    }
-
-    if (this.errors.length >= 1) {
-      throw this.errors[0];
-    }
-
-    return value;
+  if (index < data.length) {
+    throwSyntaxError();
   }
-}
 
-const parser = new Parser();
+  if (errors.length >= 1) {
+    throw errors[0];
+  }
 
-export type { UnaryOperator };
-export { Parser };
-
-export const parse = (data: string, options: ParserOptions = {}) => {
-  return parser.parse(data, options);
+  return value;
 };

@@ -8,362 +8,357 @@
 import { deepStrictEqual, strictEqual, throws } from 'assert';
 import { readFile } from 'fs';
 import { join } from 'path';
-import { Parser } from '../parser';
+import { parse } from '../parser';
 
 const TEST_FILES_DIR = join(process.cwd(), 'src', 'tests', 'files');
-
-const parser = new Parser();
 
 /**
  * Identifier
  */
 
-strictEqual(parser.parse('undefined'), undefined);
+strictEqual(parse('undefined'), undefined);
 
-strictEqual(parser.parse('null'), null);
+strictEqual(parse('null'), null);
 
-strictEqual(parser.parse('false'), false);
+strictEqual(parse('false'), false);
 
-strictEqual(parser.parse('true'), true);
+strictEqual(parse('true'), true);
 
-strictEqual(parser.parse('Infinity'), Infinity);
+strictEqual(parse('Infinity'), Infinity);
 
-strictEqual(parser.parse('NaN'), NaN);
+strictEqual(parse('NaN'), NaN);
 
 /**
  * NumberLiteral
  */
 
-strictEqual(parser.parse('0'), 0);
+strictEqual(parse('0'), 0);
 
-strictEqual(parser.parse('1'), 1);
+strictEqual(parse('1'), 1);
 
-strictEqual(parser.parse('0.'), 0.0);
+strictEqual(parse('0.'), 0.0);
 
-strictEqual(parser.parse('1.'), 1.0);
+strictEqual(parse('1.'), 1.0);
 
-strictEqual(parser.parse('.123'), 0.123);
+strictEqual(parse('.123'), 0.123);
 
-strictEqual(parser.parse('0.123'), 0.123);
+strictEqual(parse('0.123'), 0.123);
 
 throws(() => {
-  parser.parse('05');
+  parse('05');
 }, SyntaxError);
 
-strictEqual(parser.parse('1.234'), 1.234);
+strictEqual(parse('1.234'), 1.234);
 
 throws(() => {
-  parser.parse('9_');
+  parse('9_');
 }, SyntaxError);
 
-strictEqual(parser.parse('9_8'), 9_8);
+strictEqual(parse('9_8'), 9_8);
 
 throws(() => {
-  parser.parse('9_8_');
+  parse('9_8_');
 }, SyntaxError);
 
-strictEqual(parser.parse('9_8_7'), 9_8_7);
+strictEqual(parse('9_8_7'), 9_8_7);
 
 throws(() => {
-  parser.parse('9__');
+  parse('9__');
 }, SyntaxError);
 
-strictEqual(parser.parse('6e54'), 6e54);
+strictEqual(parse('6e54'), 6e54);
 
-strictEqual(parser.parse('2E69'), 2e69);
+strictEqual(parse('2E69'), 2e69);
 
-strictEqual(parser.parse('3e-7'), 3e-7);
+strictEqual(parse('3e-7'), 3e-7);
 
-strictEqual(parser.parse('5.1e+51'), 5.1e51);
+strictEqual(parse('5.1e+51'), 5.1e51);
 
-strictEqual(parser.parse('6e1_2'), 6e1_2);
+strictEqual(parse('6e1_2'), 6e1_2);
 
 throws(() => {
-  parser.parse('6e1__');
+  parse('6e1__');
 }, SyntaxError);
 
-strictEqual(parser.parse('6e1_2_3'), 6e1_2_3);
+strictEqual(parse('6e1_2_3'), 6e1_2_3);
 
 throws(() => {
-  parser.parse('5_4_3e1_2_');
+  parse('5_4_3e1_2_');
 }, SyntaxError);
 
-strictEqual(parser.parse('5_4_3e1_2_3'), 5_4_3e1_2_3);
+strictEqual(parse('5_4_3e1_2_3'), 5_4_3e1_2_3);
 
 throws(() => {
-  parser.parse('0x');
+  parse('0x');
 }, SyntaxError);
 
-strictEqual(parser.parse('0x0'), 0x0);
+strictEqual(parse('0x0'), 0x0);
 
-strictEqual(parser.parse('0xd'), 0xd);
+strictEqual(parse('0xd'), 0xd);
 
-strictEqual(parser.parse('0XF'), 0xf);
+strictEqual(parse('0XF'), 0xf);
 
-strictEqual(parser.parse('0x01'), 0x01);
+strictEqual(parse('0x01'), 0x01);
 
-strictEqual(parser.parse('0xfEeD'), 0xfeed);
+strictEqual(parse('0xfEeD'), 0xfeed);
 
-strictEqual(parser.parse('0xDeadbeef1337'), 0xdeadbeef1337);
+strictEqual(parse('0xDeadbeef1337'), 0xdeadbeef1337);
 
-strictEqual(parser.parse('0xd_1'), 0xd_1);
-
-throws(() => {
-  parser.parse('0xd_.');
-}, SyntaxError);
+strictEqual(parse('0xd_1'), 0xd_1);
 
 throws(() => {
-  parser.parse('0x123abc.');
-}, SyntaxError);
-
-strictEqual(parser.parse('0o10'), 0o10);
-
-strictEqual(parser.parse('0o1_0'), 0o1_0);
-
-throws(() => {
-  parser.parse('0o1_');
-}, SyntaxError);
-
-strictEqual(parser.parse('0O32'), 0o32);
-
-strictEqual(parser.parse('0o0644'), 0o0644);
-
-throws(() => {
-  parser.parse('0o0648');
+  parse('0xd_.');
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('0o123.');
+  parse('0x123abc.');
 }, SyntaxError);
 
-strictEqual(parser.parse('0b0'), 0b0);
+strictEqual(parse('0o10'), 0o10);
 
-strictEqual(parser.parse('0b0_1'), 0b0_1);
+strictEqual(parse('0o1_0'), 0o1_0);
 
 throws(() => {
-  parser.parse('0b0_');
+  parse('0o1_');
 }, SyntaxError);
 
-strictEqual(parser.parse('0b10100011'), 0b10100011);
+strictEqual(parse('0O32'), 0o32);
+
+strictEqual(parse('0o0644'), 0o0644);
+
+throws(() => {
+  parse('0o0648');
+}, SyntaxError);
+
+throws(() => {
+  parse('0o123.');
+}, SyntaxError);
+
+strictEqual(parse('0b0'), 0b0);
+
+strictEqual(parse('0b0_1'), 0b0_1);
+
+throws(() => {
+  parse('0b0_');
+}, SyntaxError);
+
+strictEqual(parse('0b10100011'), 0b10100011);
 
 strictEqual(
-  parser.parse('0B01111111100000000000000000000000'),
+  parse('0B01111111100000000000000000000000'),
   0b01111111100000000000000000000000,
 );
 
 throws(() => {
-  parser.parse('0b012');
+  parse('0b012');
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('0b0644');
+  parse('0b0644');
 }, SyntaxError);
 
-deepStrictEqual(parser.parse('37n'), BigInt(37));
+deepStrictEqual(parse('37n'), BigInt(37));
 
 /**
  * StringLiteral
  */
 
-strictEqual(parser.parse('"foo"'), 'foo');
+strictEqual(parse('"foo"'), 'foo');
 
 throws(() => {
-  parser.parse('"foo');
+  parse('"foo');
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('"fo\\"o');
+  parse('"fo\\"o');
 }, SyntaxError);
 
-strictEqual(parser.parse('"fo\\"o"'), 'fo"o');
+strictEqual(parse('"fo\\"o"'), 'fo"o');
 
 throws(() => {
-  parser.parse('"fo\\');
+  parse('"fo\\');
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('"fo\\"');
+  parse('"fo\\"');
 }, SyntaxError);
 
-strictEqual(parser.parse('"fo\\""'), 'fo"');
+strictEqual(parse('"fo\\""'), 'fo"');
 
-strictEqual(parser.parse("'foo'"), 'foo');
+strictEqual(parse("'foo'"), 'foo');
 
-strictEqual(parser.parse("'fo\\'o'"), "fo'o");
+strictEqual(parse("'fo\\'o'"), "fo'o");
 
-strictEqual(parser.parse('"a\\0b"'), 'a\0b');
+strictEqual(parse('"a\\0b"'), 'a\0b');
 
-strictEqual(parser.parse('"a\\\'b"'), "a'b");
+strictEqual(parse('"a\\\'b"'), "a'b");
 
-strictEqual(parser.parse('"a\\"b"'), 'a"b');
+strictEqual(parse('"a\\"b"'), 'a"b');
 
-strictEqual(parser.parse('"a\\\\b"'), 'a\\b');
+strictEqual(parse('"a\\\\b"'), 'a\\b');
 
-strictEqual(parser.parse('"a\\nb"'), 'a\nb');
+strictEqual(parse('"a\\nb"'), 'a\nb');
 
-strictEqual(parser.parse('"a\\rb"'), 'a\rb');
+strictEqual(parse('"a\\rb"'), 'a\rb');
 
-strictEqual(parser.parse('"a\\vb"'), 'a\vb');
+strictEqual(parse('"a\\vb"'), 'a\vb');
 
-strictEqual(parser.parse('"a\\tb"'), 'a\tb');
+strictEqual(parse('"a\\tb"'), 'a\tb');
 
-strictEqual(parser.parse('"a\\bb"'), 'a\bb');
+strictEqual(parse('"a\\bb"'), 'a\bb');
 
-strictEqual(parser.parse('"a\\fb"'), 'a\fb');
+strictEqual(parse('"a\\fb"'), 'a\fb');
 
-strictEqual(parser.parse('"a\\Qb"'), 'aQb');
+strictEqual(parse('"a\\Qb"'), 'aQb');
 
-strictEqual(parser.parse('"a\\u3bf7b"'), 'a\u3bf7b');
+strictEqual(parse('"a\\u3bf7b"'), 'a\u3bf7b');
 
-strictEqual(parser.parse('"a\\u{0}b"'), 'a\u{0}b');
+strictEqual(parse('"a\\u{0}b"'), 'a\u{0}b');
 
-strictEqual(parser.parse('"a\\u{1}b"'), 'a\u{1}b');
+strictEqual(parse('"a\\u{1}b"'), 'a\u{1}b');
 
-strictEqual(parser.parse('"a\\u{0000009999}b"'), 'a\u{0000009999}b');
+strictEqual(parse('"a\\u{0000009999}b"'), 'a\u{0000009999}b');
 
-strictEqual(parser.parse('"a\\u{1F601}b"'), 'a\u{1F601}b');
+strictEqual(parse('"a\\u{1F601}b"'), 'a\u{1F601}b');
 
-strictEqual(parser.parse('"a\\u{10FFFF}b"'), 'a\u{10FFFF}b');
+strictEqual(parse('"a\\u{10FFFF}b"'), 'a\u{10FFFF}b');
 
 throws(() => {
-  parser.parse('"a\\u{110000}b"');
+  parse('"a\\u{110000}b"');
 }, new SyntaxError('Undefined Unicode code-point'));
 
-strictEqual(parser.parse('"a\\xfbb"'), 'a\xfbb');
+strictEqual(parse('"a\\xfbb"'), 'a\xfbb');
 
-strictEqual(parser.parse('"foo\\\rbar"'), 'foobar');
+strictEqual(parse('"foo\\\rbar"'), 'foobar');
 
-strictEqual(parser.parse('"foo\\\nbar"'), 'foobar');
+strictEqual(parse('"foo\\\nbar"'), 'foobar');
 
-strictEqual(parser.parse('"foo\\\r\nbar"'), 'foobar');
+strictEqual(parse('"foo\\\r\nbar"'), 'foobar');
 
 throws(() => {
-  parser.parse('"foo\rbar"');
+  parse('"foo\rbar"');
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('"foo\nbar"');
+  parse('"foo\nbar"');
 }, SyntaxError);
 
-strictEqual(parser.parse('"foo\fbar"'), 'foo\fbar');
+strictEqual(parse('"foo\fbar"'), 'foo\fbar');
 
-strictEqual(parser.parse('"${hej}"'), '${hej}');
+strictEqual(parse('"${hej}"'), '${hej}');
 
 /**
  * TemplateLiteral
  */
 
-strictEqual(parser.parse('``'), '');
+strictEqual(parse('``'), '');
 
-strictEqual(parser.parse('`hello \\`friend\\``'), 'hello `friend`');
+strictEqual(parse('`hello \\`friend\\``'), 'hello `friend`');
 
-strictEqual(parser.parse('`foo${42}baz`'), `foo${42}baz`);
+strictEqual(parse('`foo${42}baz`'), `foo${42}baz`);
 
-strictEqual(
-  parser.parse('`foo${`abc${-42}def`}baz`'),
-  `foo${`abc${-42}def`}baz`,
-);
+strictEqual(parse('`foo${`abc${-42}def`}baz`'), `foo${`abc${-42}def`}baz`);
 
-strictEqual(parser.parse('`(${new Array()})`'), `(${[]})`);
+strictEqual(parse('`(${new Array()})`'), `(${[]})`);
 
-strictEqual(parser.parse('`(${["foo", "bar"]})`'), `(${['foo', 'bar']})`);
+strictEqual(parse('`(${["foo", "bar"]})`'), `(${['foo', 'bar']})`);
 
-strictEqual(parser.parse('`foo\nbar`'), 'foo\nbar');
+strictEqual(parse('`foo\nbar`'), 'foo\nbar');
 
-strictEqual(parser.parse('`foo\rbar`'), 'foo\rbar');
+strictEqual(parse('`foo\rbar`'), 'foo\rbar');
 
-strictEqual(parser.parse('`foo\r\nbar`'), 'foo\r\nbar');
+strictEqual(parse('`foo\r\nbar`'), 'foo\r\nbar');
 
-strictEqual(parser.parse('`foo\r\n\n\rbar`'), 'foo\r\n\n\rbar');
+strictEqual(parse('`foo\r\n\n\rbar`'), 'foo\r\n\n\rbar');
 
-strictEqual(parser.parse('`foo\\\nbar`'), 'foobar');
+strictEqual(parse('`foo\\\nbar`'), 'foobar');
 
 /**
  * ArrayExpression
  */
 
-deepStrictEqual(parser.parse('[]'), []);
+deepStrictEqual(parse('[]'), []);
 
-deepStrictEqual(parser.parse('[ ]'), []);
+deepStrictEqual(parse('[ ]'), []);
 
-deepStrictEqual(parser.parse('[,]'), [,]);
+deepStrictEqual(parse('[,]'), [,]);
 
-deepStrictEqual(parser.parse('[ , ]'), [,]);
+deepStrictEqual(parse('[ , ]'), [,]);
 
-deepStrictEqual(parser.parse('[,,]'), [, ,]);
+deepStrictEqual(parse('[,,]'), [, ,]);
 
-deepStrictEqual(parser.parse('[ , , ]'), [, ,]);
+deepStrictEqual(parse('[ , , ]'), [, ,]);
 
-deepStrictEqual(parser.parse('[,3]'), [, 3]);
+deepStrictEqual(parse('[,3]'), [, 3]);
 
-deepStrictEqual(parser.parse('[ , 3 ]'), [, 3]);
+deepStrictEqual(parse('[ , 3 ]'), [, 3]);
 
-deepStrictEqual(parser.parse('[1,2,]'), [1, 2]);
+deepStrictEqual(parse('[1,2,]'), [1, 2]);
 
-deepStrictEqual(parser.parse('[ 1 , 2 , ]'), [1, 2]);
+deepStrictEqual(parse('[ 1 , 2 , ]'), [1, 2]);
 
-deepStrictEqual(parser.parse('[ 1 , "foo" , [] , {} , ]'), [1, 'foo', [], {}]);
+deepStrictEqual(parse('[ 1 , "foo" , [] , {} , ]'), [1, 'foo', [], {}]);
 
 /**
  * ObjectExpression
  */
 
-deepStrictEqual(parser.parse('{}'), {});
+deepStrictEqual(parse('{}'), {});
 
 throws(() => {
-  parser.parse('{}', { strict: true });
+  parse('{}', { strict: true });
 }, SyntaxError);
 
-deepStrictEqual(parser.parse('  {}'), {});
+deepStrictEqual(parse('  {}'), {});
 
 throws(() => {
-  parser.parse('  {}', { strict: true });
-}, SyntaxError);
-
-throws(() => {
-  parser.parse('({}');
+  parse('  {}', { strict: true });
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('{})');
+  parse('({}');
 }, SyntaxError);
-
-deepStrictEqual(parser.parse('({})'), {});
-
-deepStrictEqual(parser.parse('({ 0: 3 })'), { 0: 3 });
-
-deepStrictEqual(parser.parse('( { .3 : 3 } )'), { 0.3: 3 });
-
-deepStrictEqual(parser.parse('({ 1_2: 3 })'), { 1_2: 3 });
 
 throws(() => {
-  parser.parse('({ 0_2: 3 })');
+  parse('{})');
 }, SyntaxError);
 
-deepStrictEqual(parser.parse('({foo:1})'), { foo: 1 });
+deepStrictEqual(parse('({})'), {});
 
-deepStrictEqual(parser.parse('({ foo : 1 })'), { foo: 1 });
+deepStrictEqual(parse('({ 0: 3 })'), { 0: 3 });
+
+deepStrictEqual(parse('( { .3 : 3 } )'), { 0.3: 3 });
+
+deepStrictEqual(parse('({ 1_2: 3 })'), { 1_2: 3 });
 
 throws(() => {
-  parser.parse('({ a: 1, 2 })');
+  parse('({ 0_2: 3 })');
 }, SyntaxError);
 
-deepStrictEqual(parser.parse('({hello:"test",})'), { hello: 'test' });
+deepStrictEqual(parse('({foo:1})'), { foo: 1 });
 
-deepStrictEqual(parser.parse('({ hello: "test", })'), { hello: 'test' });
+deepStrictEqual(parse('({ foo : 1 })'), { foo: 1 });
 
-deepStrictEqual(parser.parse('({ "hello friend": [] })'), {
+throws(() => {
+  parse('({ a: 1, 2 })');
+}, SyntaxError);
+
+deepStrictEqual(parse('({hello:"test",})'), { hello: 'test' });
+
+deepStrictEqual(parse('({ hello: "test", })'), { hello: 'test' });
+
+deepStrictEqual(parse('({ "hello friend": [] })'), {
   'hello friend': [],
 });
 
 throws(() => {
-  parser.parse('({ "yes" })');
+  parse('({ "yes" })');
 }, SyntaxError);
 
-deepStrictEqual(parser.parse('({"a":1,b:2})'), { a: 1, b: 2 });
+deepStrictEqual(parse('({"a":1,b:2})'), { a: 1, b: 2 });
 
 throws(() => {
-  parser.parse('({ `foo`: 3 })');
+  parse('({ `foo`: 3 })');
 }, SyntaxError);
 
 /**
@@ -371,123 +366,111 @@ throws(() => {
  */
 
 throws(() => {
-  parser.parse('+ 123');
+  parse('+ 123');
 }, SyntaxError);
 
-strictEqual(parser.parse('-123'), -123);
+strictEqual(parse('-123'), -123);
 
 throws(() => {
-  parser.parse('- 123');
-}, SyntaxError);
-
-throws(() => {
-  parser.parse('+-123');
+  parse('- 123');
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('-+-123');
+  parse('+-123');
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('+-+-123');
+  parse('-+-123');
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('--123');
+  parse('+-+-123');
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('++123');
+  parse('--123');
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('-(-123)');
+  parse('++123');
+}, SyntaxError);
+
+throws(() => {
+  parse('-(-123)');
 });
 
 throws(() => {
-  parser.parse('-(+123)');
+  parse('-(+123)');
 });
 
 throws(() => {
-  parser.parse('-(+-123)');
+  parse('-(+-123)');
 });
 
 throws(() => {
-  parser.parse('-+-+-(+-123)');
+  parse('-+-+-(+-123)');
 });
 
 /**
  * NewExpression
  */
 
-deepStrictEqual(
-  parser.parse('new Date(1328459820000)'),
-  new Date(1328459820000),
-);
+deepStrictEqual(parse('new Date(1328459820000)'), new Date(1328459820000));
+
+deepStrictEqual(parse('new Error("Some error")'), new Error('Some error'));
 
 deepStrictEqual(
-  parser.parse('new Error("Some error")'),
-  new Error('Some error'),
-);
-
-deepStrictEqual(
-  parser.parse('new RangeError("Inherited error")'),
+  parse('new RangeError("Inherited error")'),
   new RangeError('Inherited error'),
 );
 
-deepStrictEqual(parser.parse('new Map'), new Map());
+deepStrictEqual(parse('new Map'), new Map());
 
 deepStrictEqual(
-  parser.parse('new Map([["foo",37],[true,null]])'),
+  parse('new Map([["foo",37],[true,null]])'),
   new Map<unknown, unknown>([
     ['foo', 37],
     [true, null],
   ]),
 );
 
-deepStrictEqual(parser.parse('new RegExp("^fo.*bar?$","g")'), /^fo.*bar?$/g);
+deepStrictEqual(parse('new RegExp("^fo.*bar?$","g")'), /^fo.*bar?$/g);
 
-deepStrictEqual(
-  parser.parse('new Set(["foo","bar"])'),
-  new Set(['foo', 'bar']),
-);
+deepStrictEqual(parse('new Set(["foo","bar"])'), new Set(['foo', 'bar']));
 
-deepStrictEqual(parser.parse('new Boolean(true)'), new Boolean(true));
+deepStrictEqual(parse('new Boolean(true)'), new Boolean(true));
 
-deepStrictEqual(parser.parse('new Number(42)'), new Number(42));
+deepStrictEqual(parse('new Number(42)'), new Number(42));
 
-deepStrictEqual(parser.parse('new String("foo")'), new String('foo'));
+deepStrictEqual(parse('new String("foo")'), new String('foo'));
 
-deepStrictEqual(parser.parse('new Array()'), []);
+deepStrictEqual(parse('new Array()'), []);
 
-deepStrictEqual(parser.parse('new Array("foo")'), new Array('foo'));
+deepStrictEqual(parse('new Array("foo")'), new Array('foo'));
 
-deepStrictEqual(parser.parse('new Array(["foo"])'), new Array(['foo']));
+deepStrictEqual(parse('new Array(["foo"])'), new Array(['foo']));
 
-deepStrictEqual(
-  parser.parse('new Array(["foo", "bar"])'),
-  new Array(['foo', 'bar']),
-);
+deepStrictEqual(parse('new Array(["foo", "bar"])'), new Array(['foo', 'bar']));
 
-deepStrictEqual(parser.parse('new Array([, , "bar"])'), new Array([, , 'bar']));
+deepStrictEqual(parse('new Array([, , "bar"])'), new Array([, , 'bar']));
 
-deepStrictEqual(parser.parse('new Array([, , , ])'), new Array([, , ,]));
+deepStrictEqual(parse('new Array([, , , ])'), new Array([, , ,]));
 
-deepStrictEqual(parser.parse('new Array(3)'), new Array(3));
+deepStrictEqual(parse('new Array(3)'), new Array(3));
 
-deepStrictEqual(parser.parse('new Object({ foo: 3 })'), new Object({ foo: 3 }));
+deepStrictEqual(parse('new Object({ foo: 3 })'), new Object({ foo: 3 }));
 
 strictEqual(
-  parser.parse('new Function("...a","return ((a, b) => a + b)(...a);")')(3, 4),
+  parse('new Function("...a","return ((a, b) => a + b)(...a);")')(3, 4),
   7,
 );
 
 throws(() => {
-  parser.parse('new foo');
+  parse('new foo');
 }, new ReferenceError('foo is not defined'));
 
 throws(() => {
-  parser.parse('new {}');
+  parse('new {}');
 }, new SyntaxError("Unexpected character '{' at index 4"));
 
 /**
@@ -495,73 +478,73 @@ throws(() => {
  */
 
 throws(() => {
-  parser.parse('()');
+  parse('()');
 }, SyntaxError);
 
-strictEqual(parser.parse('(null)'), null);
+strictEqual(parse('(null)'), null);
 
-strictEqual(parser.parse('( null )'), null);
+strictEqual(parse('( null )'), null);
 
-deepStrictEqual(parser.parse('([true, (false), ((({})))])'), [true, false, {}]);
+deepStrictEqual(parse('([true, (false), ((({})))])'), [true, false, {}]);
 
 /**
  * RegExpLiteral
  */
 
-deepStrictEqual(parser.parse('/foo.*bar/'), /foo.*bar/);
+deepStrictEqual(parse('/foo.*bar/'), /foo.*bar/);
 
 throws(() => {
-  parser.parse('/foo');
+  parse('/foo');
 }, SyntaxError);
 
-deepStrictEqual(parser.parse('/foo\\/bar/'), /foo\/bar/);
+deepStrictEqual(parse('/foo\\/bar/'), /foo\/bar/);
 
 throws(() => {
-  parser.parse('/foo/bar/');
+  parse('/foo/bar/');
 }, SyntaxError);
 
-deepStrictEqual(parser.parse('/foo[/]bar/'), /foo[/]bar/);
+deepStrictEqual(parse('/foo[/]bar/'), /foo[/]bar/);
 
 throws(() => {
-  parser.parse('/foo[bar/');
+  parse('/foo[bar/');
 }, SyntaxError);
 
-deepStrictEqual(parser.parse('/foo[0-9/a-z/]bar/'), /foo[0-9/a-z/]bar/);
+deepStrictEqual(parse('/foo[0-9/a-z/]bar/'), /foo[0-9/a-z/]bar/);
 
-deepStrictEqual(parser.parse('/foo0-9]/'), /foo0-9]/);
+deepStrictEqual(parse('/foo0-9]/'), /foo0-9]/);
 
-deepStrictEqual(parser.parse('/foo[\\]]bar/'), /foo[\]]bar/);
+deepStrictEqual(parse('/foo[\\]]bar/'), /foo[\]]bar/);
 
-deepStrictEqual(parser.parse('/foo[0-9\\]a-z[]bar/'), /foo[0-9\]a-z[]bar/);
+deepStrictEqual(parse('/foo[0-9\\]a-z[]bar/'), /foo[0-9\]a-z[]bar/);
 
-deepStrictEqual(parser.parse('/foo[[]/'), /foo[[]/);
+deepStrictEqual(parse('/foo[[]/'), /foo[[]/);
 
-deepStrictEqual(parser.parse('/foo[]]/'), /foo[]]/);
+deepStrictEqual(parse('/foo[]]/'), /foo[]]/);
 
-deepStrictEqual(parser.parse('/foo[]][^]]/'), /foo[]][^]]/);
+deepStrictEqual(parse('/foo[]][^]]/'), /foo[]][^]]/);
 
-deepStrictEqual(parser.parse('/^.*foo[^\\]]$/'), /^.*foo[^\]]$/);
+deepStrictEqual(parse('/^.*foo[^\\]]$/'), /^.*foo[^\]]$/);
 
-deepStrictEqual(parser.parse('/g/g'), /g/g);
+deepStrictEqual(parse('/g/g'), /g/g);
 
-deepStrictEqual(parser.parse('/^.*foo[^\\]]$/gimsuy'), /^.*foo[^\]]$/gimsuy);
+deepStrictEqual(parse('/^.*foo[^\\]]$/gimsuy'), /^.*foo[^\]]$/gimsuy);
 
 throws(() => {
-  parser.parse('/^.*foo[^]]$/gimsuyd');
+  parse('/^.*foo[^]]$/gimsuyd');
 }, SyntaxError);
 
 /**
  * (inline comment)
  */
 
-strictEqual(parser.parse('//'), undefined);
+strictEqual(parse('//'), undefined);
 
-strictEqual(parser.parse('// '), undefined);
+strictEqual(parse('// '), undefined);
 
-strictEqual(parser.parse('//\n'), undefined);
+strictEqual(parse('//\n'), undefined);
 
 deepStrictEqual(
-  parser.parse(`[//test
+  parse(`[//test
     //test
     'foo',//test
     //test
@@ -572,7 +555,7 @@ deepStrictEqual(
 );
 
 deepStrictEqual(
-  parser.parse(`
+  parse(`
     new//test
     //test
     Array()//test
@@ -581,7 +564,7 @@ deepStrictEqual(
 );
 
 deepStrictEqual(
-  parser.parse(`[
+  parse(`[
     'foo',//test
     //test
     'bar'//test
@@ -590,7 +573,7 @@ deepStrictEqual(
 );
 
 deepStrictEqual(
-  parser.parse(`[
+  parse(`[
     34,//test
     -5e6//test
   ]`),
@@ -598,7 +581,7 @@ deepStrictEqual(
 );
 
 deepStrictEqual(
-  parser.parse(`({//test
+  parse(`({//test
     //test
     foo//test
     ://test
@@ -613,7 +596,7 @@ deepStrictEqual(
 );
 
 throws(() => {
-  parser.parse(`({
+  parse(`({
     // Do something.})
   `);
 }, SyntaxError);
@@ -623,23 +606,23 @@ throws(() => {
  */
 
 throws(() => {
-  parser.parse('/*');
+  parse('/*');
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('/**');
+  parse('/**');
 }, SyntaxError);
 
-strictEqual(parser.parse('/**/'), undefined);
+strictEqual(parse('/**/'), undefined);
 
-strictEqual(parser.parse(' /*  */ '), undefined);
+strictEqual(parse(' /*  */ '), undefined);
 
-strictEqual(parser.parse('/* Hello world! */'), undefined);
+strictEqual(parse('/* Hello world! */'), undefined);
 
-deepStrictEqual(parser.parse('[/**/1/*/**/, /** //*/2/**/]'), [1, 2]);
+deepStrictEqual(parse('[/**/1/*/**/, /** //*/2/**/]'), [1, 2]);
 
 deepStrictEqual(
-  parser.parse(`[/*
+  parse(`[/*
     */'foo',/*
     */42,/*
   */]`),
@@ -647,7 +630,7 @@ deepStrictEqual(
 );
 
 deepStrictEqual(
-  parser.parse(`/*
+  parse(`/*
     */new/*
     */Array()/*
   */`),
@@ -655,7 +638,7 @@ deepStrictEqual(
 );
 
 deepStrictEqual(
-  parser.parse(`[/*
+  parse(`[/*
     */'foo',/*
     *///test
     /*
@@ -665,7 +648,7 @@ deepStrictEqual(
 );
 
 deepStrictEqual(
-  parser.parse(`[/*
+  parse(`[/*
     */34,/*/
     */-5e6/*
   */]`),
@@ -673,7 +656,7 @@ deepStrictEqual(
 );
 
 deepStrictEqual(
-  parser.parse(`({/*
+  parse(`({/*
     */foo/*
     */:/*
     */'bar'/*
@@ -695,7 +678,7 @@ readFile(join(TEST_FILES_DIR, 'data.js'), 'utf8', (error, data) => {
     throw error;
   }
 
-  deepStrictEqual(parser.parse(data), {
+  deepStrictEqual(parse(data), {
     inf: Infinity,
     und: undefined,
     date: new Date('2021-04-14'),

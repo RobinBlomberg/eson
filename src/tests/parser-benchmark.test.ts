@@ -3,12 +3,12 @@ import { join } from 'path';
 import { ESON } from '../eson';
 import { benchmark } from './utils/benchmark';
 
-const RUN_COUNT = 100;
+const RUN_COUNT = 1000;
 const TEST_FILES_DIR = join(process.cwd(), 'src', 'tests', 'files');
 
 const runBenchmark = async () => {
-  const esonData = await readFile(join(TEST_FILES_DIR, 'absence.json'), 'utf8');
-  const jsonData = await readFile(join(TEST_FILES_DIR, 'absence.json'), 'utf8');
+  const esonData = await readFile(join(TEST_FILES_DIR, 'package.json'), 'utf8');
+  const jsonData = await readFile(join(TEST_FILES_DIR, 'package.json'), 'utf8');
 
   const esonDuration = benchmark(() => {
     ESON.parse(esonData);
