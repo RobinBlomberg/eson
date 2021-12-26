@@ -10,26 +10,25 @@ const runBenchmark = async () => {
   const esonData = await readFile(join(TEST_FILES_DIR, 'absence.js'), 'utf8');
   const jsonData = await readFile(join(TEST_FILES_DIR, 'absence.json'), 'utf8');
 
-  console.info(
-    'Warmup',
-    benchmark(() => void 0, RUN_COUNT),
-  );
+  const esonDuration = benchmark(() => {
+    ESON.parse(esonData);
+  }, RUN_COUNT);
 
-  console.info(
-    'ESON.parse',
-    benchmark(() => {
-      ESON.parse(esonData);
-    }, RUN_COUNT),
-  );
+  const jsonDuration = benchmark(() => {
+    JSON.parse(
+      jsonData /* , (key, value) => {
+      return /At$|Time$/.test(key) ? new Date(value) : value;
+    } */,
+    );
+  }, RUN_COUNT);
 
-  console.info(
-    'JSON.parse',
-    benchmark(() => {
-      JSON.parse(jsonData, (key, value) => {
-        return /At$|Time$/.test(key) ? new Date(value) : value;
-      });
-    }, RUN_COUNT),
-  );
+  console.info({
+    difference: esonDuration / jsonDuration,
+    esonDuration,
+    jsonDuration,
+    runCount: RUN_COUNT,
+    test: 'ESON.parse vs JSON.parse',
+  });
 };
 
 void runBenchmark();
