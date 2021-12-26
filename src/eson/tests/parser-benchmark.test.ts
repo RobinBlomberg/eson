@@ -7,7 +7,7 @@ const RUN_COUNT = 50000;
 const TEST_FILES_DIR = join(process.cwd(), 'src', 'eson', 'tests', 'files');
 
 const runBenchmark = async () => {
-  const esonData = await readFile(join(TEST_FILES_DIR, 'absence.js'), 'utf8');
+  const esonData = await readFile(join(TEST_FILES_DIR, 'absence.json'), 'utf8');
   const jsonData = await readFile(join(TEST_FILES_DIR, 'absence.json'), 'utf8');
 
   const esonDuration = benchmark(() => {

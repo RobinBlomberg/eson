@@ -315,12 +315,24 @@ deepStrictEqual(parser.parse('[ 1 , "foo" , [] , {} , ]'), [1, 'foo', [], {}]);
  * ObjectExpression
  */
 
+deepStrictEqual(parser.parse('{}'), {});
+
 throws(() => {
-  parser.parse('{}');
+  parser.parse('{}', { strict: true });
+}, SyntaxError);
+
+deepStrictEqual(parser.parse('  {}'), {});
+
+throws(() => {
+  parser.parse('  {}', { strict: true });
 }, SyntaxError);
 
 throws(() => {
-  parser.parse('  {}');
+  parser.parse('({}');
+}, SyntaxError);
+
+throws(() => {
+  parser.parse('{})');
 }, SyntaxError);
 
 deepStrictEqual(parser.parse('({})'), {});

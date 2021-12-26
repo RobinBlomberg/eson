@@ -1,5 +1,5 @@
 import { Parser as BaseParser, Pattern } from '../parser';
-import { ParserContext, UnaryOperator } from './types';
+import { ParserContext, ParserOptions, UnaryOperator } from './types';
 
 const UNDERSCORE_REGEXP = /_/g;
 
@@ -130,6 +130,7 @@ const GlobalVariables: Record<string, unknown> = {
 class Parser extends BaseParser {
   errors: unknown[] = [];
   isStart = true;
+  options: ParserOptions = {};
 
   private consumeIdentifier() {
     let name = '';
@@ -328,7 +329,7 @@ class Parser extends BaseParser {
   }
 
   private parseObjectExpression(context: ParserContext) {
-    if (this.isStart) {
+    if (this.options.strict && this.isStart) {
       this._error();
     }
 
@@ -660,11 +661,12 @@ class Parser extends BaseParser {
     return super._consume(length);
   }
 
-  parse(data: string) {
+  parse(data: string, options: ParserOptions = {}) {
     this.data = data;
     this.errors = [];
     this.index = 0;
     this.isStart = true;
+    this.options = options;
 
     this.parseSpace();
 
