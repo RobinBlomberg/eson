@@ -5,3 +5,5 @@ strictEqual(
   stringifyString("'Dwayne \\'The Rock\\' Johnson'"),
   "'\\'Dwayne \\\\\\'The Rock\\\\\\' Johnson\\''",
 );
+
+strictEqual(stringifyString('foo\nbar'), "'foo\\nbar'");
