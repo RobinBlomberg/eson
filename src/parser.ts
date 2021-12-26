@@ -1,4 +1,4 @@
-import { stringifyString } from '../ts-grammar';
+import { stringifyString } from './stringify-string';
 import { ParserOptions, Pattern, UnaryOperator } from './types';
 
 const globals: Record<string, unknown> = {
@@ -110,9 +110,9 @@ class Parser {
 
   private _error(): string {
     if (this.data[this.index]) {
-      const char = stringifyString(this.data[this.index] ?? '');
+      const character = stringifyString(this.data[this.index]!);
       throw new SyntaxError(
-        `Unexpected character ${char} at index ${this.index}`,
+        `Unexpected character ${character} at index ${this.index}`,
       );
     } else {
       throw new SyntaxError('Unexpected end of input');

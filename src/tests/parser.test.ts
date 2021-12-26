@@ -10,7 +10,7 @@ import { readFile } from 'fs';
 import { join } from 'path';
 import { Parser } from '../parser';
 
-const TEST_FILES_DIR = join(process.cwd(), 'src', 'eson', 'tests', 'files');
+const TEST_FILES_DIR = join(process.cwd(), 'src', 'tests', 'files');
 
 const parser = new Parser();
 

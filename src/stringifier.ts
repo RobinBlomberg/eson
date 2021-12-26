@@ -1,5 +1,7 @@
-import { stringifyString, TS_IDENTIFIER_REGEXP } from '../ts-grammar';
 import { getConstructor } from './object-parameters';
+import { stringifyString } from './stringify-string';
+
+const TS_IDENTIFIER_REGEXP = /^[a-zA-Z_$][a-zA-Z_$0-9]*$/;
 
 class Stringifier {
   private stringifyArrayExpression(

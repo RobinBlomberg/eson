@@ -4,7 +4,7 @@ import { ESON } from '../eson';
 import { benchmark } from './utils/benchmark';
 
 const RUN_COUNT = 100;
-const TEST_FILES_DIR = join(process.cwd(), 'src', 'eson', 'tests', 'files');
+const TEST_FILES_DIR = join(process.cwd(), 'src', 'tests', 'files');
 
 const runBenchmark = async () => {
   const esonData = await readFile(join(TEST_FILES_DIR, 'absence.json'), 'utf8');
