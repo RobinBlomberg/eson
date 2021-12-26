@@ -64,36 +64,36 @@ const HEX_ALPHA_L_RANGE = `${AL}-${FL}` as const;
 const HEX_ALPHA_U_RANGE = `${AU}-${FU}` as const;
 const OCTAL_DIGIT_RANGE = `${ZERO}-${SEVEN}` as const;
 
-const R_BINARY_DIGIT = new RegExp(`[${BINARY_DIGIT_RANGE}]`);
-const R_BINARY_DIGIT_US = new RegExp(`[${BINARY_DIGIT_RANGE}${US}]`);
-const R_BINARY_PREFIX = new RegExp(`[${BL}${BU}]`);
-const R_DIGIT = new RegExp(`[${DIGIT_RANGE}]`);
-const R_DIGIT_DOT = new RegExp(`[${DIGIT_RANGE}${DOT}]`);
-const R_DIGIT_US = new RegExp(`[${DIGIT_RANGE}${US}]`);
-const R_EXPONENT = new RegExp(`[${EL}${EU}]`);
+const R_BINARY_DIGIT = new RegExp(`^[${BINARY_DIGIT_RANGE}]$`);
+const R_BINARY_DIGIT_US = new RegExp(`^[${BINARY_DIGIT_RANGE}${US}]$`);
+const R_BINARY_PREFIX = new RegExp(`^[${BL}${BU}]$`);
+const R_DIGIT = new RegExp(`^[${DIGIT_RANGE}]$`);
+const R_DIGIT_DOT = new RegExp(`^[${DIGIT_RANGE}${DOT}]$`);
+const R_DIGIT_US = new RegExp(`^[${DIGIT_RANGE}${US}]$`);
+const R_EXPONENT = new RegExp(`^[${EL}${EU}]$`);
 const R_HEX_DIGIT = new RegExp(
-  `[${DIGIT_RANGE}${HEX_ALPHA_U_RANGE}${HEX_ALPHA_L_RANGE}]`,
+  `^[${DIGIT_RANGE}${HEX_ALPHA_U_RANGE}${HEX_ALPHA_L_RANGE}]$`,
 );
 const R_HEX_DIGIT_US = new RegExp(
-  `[${DIGIT_RANGE}${HEX_ALPHA_U_RANGE}${HEX_ALPHA_L_RANGE}${US}]`,
+  `^[${DIGIT_RANGE}${HEX_ALPHA_U_RANGE}${HEX_ALPHA_L_RANGE}${US}]$`,
 );
-const R_HEX_PREFIX = new RegExp(`[${XL}${XU}]`);
+const R_HEX_PREFIX = new RegExp(`^[${XL}${XU}]$`);
 const R_IDENTIFIER_START = new RegExp(
-  `[${ALPHA_L_RANGE}${ALPHA_U_RANGE}${US}${DOLLAR}]`,
+  `^[${ALPHA_L_RANGE}${ALPHA_U_RANGE}${US}${DOLLAR}]$`,
 );
 const R_IDENTIFIER_TAIL = new RegExp(
-  `[${ALPHA_L_RANGE}${ALPHA_U_RANGE}${US}${DOLLAR}${DIGIT_RANGE}]`,
+  `^[${ALPHA_L_RANGE}${ALPHA_U_RANGE}${US}${DOLLAR}${DIGIT_RANGE}]$`,
 );
-const R_KEY_START = new RegExp(`[${DQ}${SQ}${DOT}${DIGIT_RANGE}]`);
-const R_NEWLINE = new RegExp(`[${LF}${CR}]`);
-const R_NOT_FSLASH = new RegExp(`[^${FSLASH}]`);
-const R_NOT_NEWLINE = new RegExp(`[^${LF}${CR}]`);
-const R_OCTAL_DIGIT = new RegExp(`[${OCTAL_DIGIT_RANGE}]`);
-const R_OCTAL_DIGIT_US = new RegExp(`[${OCTAL_DIGIT_RANGE}${US}]`);
-const R_OCTAL_PREFIX = new RegExp(`[${OL}${OU}]`);
-const R_REGEXP_FLAG = new RegExp(`[${GL}${IL}${ML}${SL}${UL}${YL}]`);
-const R_SPACE = new RegExp(`[${SPACE}${TAB}${LF}${CR}${FF}]`);
-const R_UNARY = new RegExp(`[${PLUS}${MINUS}]`);
+const R_KEY_START = new RegExp(`^[${DQ}${SQ}${DOT}${DIGIT_RANGE}]$`);
+const R_NEWLINE = new RegExp(`^[${LF}${CR}]$`);
+const R_NOT_FSLASH = new RegExp(`^[^${FSLASH}]$`);
+const R_NOT_NEWLINE = new RegExp(`^[^${LF}${CR}]$`);
+const R_OCTAL_DIGIT = new RegExp(`^[${OCTAL_DIGIT_RANGE}]$`);
+const R_OCTAL_DIGIT_US = new RegExp(`^[${OCTAL_DIGIT_RANGE}${US}]$`);
+const R_OCTAL_PREFIX = new RegExp(`^[${OL}${OU}]$`);
+const R_REGEXP_FLAG = new RegExp(`^[${GL}${IL}${ML}${SL}${UL}${YL}]$`);
+const R_SPACE = new RegExp(`^[${SPACE}${TAB}${LF}${CR}${FF}]$`);
+const R_UNARY = new RegExp(`^[${PLUS}${MINUS}]$`);
 
 const SEQ_BLOCK_COMMENT_END = [ASTERISK, FSLASH] as const;
 const SEQ_ELLIPSIS = [DOT, DOT, DOT] as const;
