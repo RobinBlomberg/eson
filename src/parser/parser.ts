@@ -1,7 +1,4 @@
 import { stringifyString } from '../ts-grammar';
-import { CharacterClass } from './character-class';
-import { Negation } from './negation';
-import { Range } from './range';
 import { Pattern } from './types';
 
 export class Parser {
@@ -77,18 +74,8 @@ export class Parser {
       return false;
     } else if (typeof pattern === 'string') {
       return char === pattern;
-    } else if (pattern instanceof Range) {
-      return char >= pattern.min && char <= pattern.max;
-    } else if (pattern instanceof CharacterClass) {
-      for (const childPattern of pattern.patterns) {
-        if (this._test(childPattern, offset)) {
-          return true;
-        }
-      }
-
-      return false;
-    } else if (pattern instanceof Negation) {
-      return !this._test(pattern.pattern, offset);
+    } else if (pattern instanceof RegExp) {
+      return pattern.test(char);
     }
 
     return true;

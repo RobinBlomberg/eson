@@ -1,10 +1,4 @@
-import {
-  CharacterClass,
-  Negation,
-  Parser as BaseParser,
-  Pattern,
-  Range,
-} from '../parser';
+import { Parser as BaseParser, Pattern } from '../parser';
 import { ParserContext, UnaryOperator } from './types';
 
 const UNDERSCORE_REGEXP = /_/g;
@@ -62,48 +56,44 @@ const ZERO = '0';
 const ZL = 'z';
 const ZU = 'Z';
 
-const R_ALPHA_L = new Range(AL, ZL);
-const R_ALPHA_U = new Range(AU, ZU);
-const R_BINARY_DIGIT = new Range(ZERO, ONE);
-const R_BINARY_DIGIT_US = new CharacterClass([new Range(ZERO, ONE), US]);
-const R_BINARY_PREFIX = new CharacterClass([BL, BU]);
-const R_DIGIT = new Range(ZERO, NINE);
-const R_DIGIT_DOT = new CharacterClass([R_DIGIT, DOT]);
-const R_DIGIT_US = new CharacterClass([R_DIGIT, US]);
-const R_EXPONENT = new CharacterClass([EL, EU]);
-const R_HEX_ALPHA_L = new Range(AL, FL);
-const R_HEX_ALPHA_U = new Range(AU, FU);
-const R_HEX_DIGIT = new CharacterClass([R_DIGIT, R_HEX_ALPHA_U, R_HEX_ALPHA_L]);
-const R_HEX_DIGIT_US = new CharacterClass([
-  R_DIGIT,
-  R_HEX_ALPHA_U,
-  R_HEX_ALPHA_L,
-  US,
-]);
-const R_HEX_PREFIX = new CharacterClass([XL, XU]);
-const R_IDENTIFIER_START = new CharacterClass([
-  R_ALPHA_L,
-  R_ALPHA_U,
-  US,
-  DOLLAR,
-]);
-const R_IDENTIFIER_TAIL = new CharacterClass([
-  R_ALPHA_L,
-  R_ALPHA_U,
-  US,
-  DOLLAR,
-  R_DIGIT,
-]);
-const R_KEY_START = new CharacterClass([DQ, SQ, DOT, R_DIGIT]);
-const R_NEWLINE = new CharacterClass([LF, CR]);
-const R_NOT_FSLASH = new Negation(FSLASH);
-const R_NOT_NEWLINE = new Negation(R_NEWLINE);
-const R_OCTAL_DIGIT = new Range(ZERO, SEVEN);
-const R_OCTAL_DIGIT_US = new CharacterClass([new Range(ZERO, SEVEN), US]);
-const R_OCTAL_PREFIX = new CharacterClass([OL, OU]);
-const R_REGEXP_FLAG = new CharacterClass([GL, IL, ML, SL, UL, YL]);
-const R_SPACE = new CharacterClass([SPACE, TAB, LF, CR, FF]);
-const R_UNARY = new CharacterClass([PLUS, MINUS]);
+const ALPHA_L_RANGE = `${AL}-${ZL}` as const;
+const ALPHA_U_RANGE = `${AU}-${ZU}` as const;
+const BINARY_DIGIT_RANGE = `${ZERO}-${ONE}` as const;
+const DIGIT_RANGE = `${ZERO}-${NINE}` as const;
+const HEX_ALPHA_L_RANGE = `${AL}-${FL}` as const;
+const HEX_ALPHA_U_RANGE = `${AU}-${FU}` as const;
+const OCTAL_DIGIT_RANGE = `${ZERO}-${SEVEN}` as const;
+
+const R_BINARY_DIGIT = new RegExp(`[${BINARY_DIGIT_RANGE}]`);
+const R_BINARY_DIGIT_US = new RegExp(`[${BINARY_DIGIT_RANGE}${US}]`);
+const R_BINARY_PREFIX = new RegExp(`[${BL}${BU}]`);
+const R_DIGIT = new RegExp(`[${DIGIT_RANGE}]`);
+const R_DIGIT_DOT = new RegExp(`[${DIGIT_RANGE}${DOT}]`);
+const R_DIGIT_US = new RegExp(`[${DIGIT_RANGE}${US}]`);
+const R_EXPONENT = new RegExp(`[${EL}${EU}]`);
+const R_HEX_DIGIT = new RegExp(
+  `[${DIGIT_RANGE}${HEX_ALPHA_U_RANGE}${HEX_ALPHA_L_RANGE}]`,
+);
+const R_HEX_DIGIT_US = new RegExp(
+  `[${DIGIT_RANGE}${HEX_ALPHA_U_RANGE}${HEX_ALPHA_L_RANGE}${US}]`,
+);
+const R_HEX_PREFIX = new RegExp(`[${XL}${XU}]`);
+const R_IDENTIFIER_START = new RegExp(
+  `[${ALPHA_L_RANGE}${ALPHA_U_RANGE}${US}${DOLLAR}]`,
+);
+const R_IDENTIFIER_TAIL = new RegExp(
+  `[${ALPHA_L_RANGE}${ALPHA_U_RANGE}${US}${DOLLAR}${DIGIT_RANGE}]`,
+);
+const R_KEY_START = new RegExp(`[${DQ}${SQ}${DOT}${DIGIT_RANGE}]`);
+const R_NEWLINE = new RegExp(`[${LF}${CR}]`);
+const R_NOT_FSLASH = new RegExp(`[^${FSLASH}]`);
+const R_NOT_NEWLINE = new RegExp(`[^${LF}${CR}]`);
+const R_OCTAL_DIGIT = new RegExp(`[${OCTAL_DIGIT_RANGE}]`);
+const R_OCTAL_DIGIT_US = new RegExp(`[${OCTAL_DIGIT_RANGE}${US}]`);
+const R_OCTAL_PREFIX = new RegExp(`[${OL}${OU}]`);
+const R_REGEXP_FLAG = new RegExp(`[${GL}${IL}${ML}${SL}${UL}${YL}]`);
+const R_SPACE = new RegExp(`[${SPACE}${TAB}${LF}${CR}${FF}]`);
+const R_UNARY = new RegExp(`[${PLUS}${MINUS}]`);
 
 const SEQ_BLOCK_COMMENT_END = [ASTERISK, FSLASH] as const;
 const SEQ_ELLIPSIS = [DOT, DOT, DOT] as const;

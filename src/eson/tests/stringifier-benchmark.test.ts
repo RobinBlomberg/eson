@@ -4,25 +4,41 @@ import { benchmark } from './utils/benchmark';
 
 const RUN_COUNT = 100000;
 
-const runBenchmark = () => {
-  console.info(
-    'Warmup',
-    benchmark(() => void 0, RUN_COUNT),
-  );
+const runNonPrettifyBenchmark = () => {
+  const esonDuration = benchmark(() => {
+    ESON.stringify(mock);
+  }, RUN_COUNT);
 
-  console.info(
-    'ESON.stringify',
-    benchmark(() => {
-      ESON.stringify(mock, null, 2);
-    }, RUN_COUNT),
-  );
+  const jsonDuration = benchmark(() => {
+    JSON.stringify(mock);
+  }, RUN_COUNT);
 
-  console.info(
-    'JSON.stringify',
-    benchmark(() => {
-      JSON.stringify(mock, null, 2);
-    }, RUN_COUNT),
-  );
+  console.info({
+    difference: esonDuration / jsonDuration,
+    esonDuration,
+    jsonDuration,
+    runCount: RUN_COUNT,
+    test: 'ESON.stringify vs JSON.stringify',
+  });
 };
 
-runBenchmark();
+const runPrettifyBenchmark = () => {
+  const esonDuration = benchmark(() => {
+    ESON.stringify(mock, null, 2);
+  }, RUN_COUNT);
+
+  const jsonDuration = benchmark(() => {
+    JSON.stringify(mock, null, 2);
+  }, RUN_COUNT);
+
+  console.info({
+    difference: esonDuration / jsonDuration,
+    esonDuration,
+    jsonDuration,
+    runCount: RUN_COUNT,
+    test: 'ESON.stringify vs JSON.stringify (pretty)',
+  });
+};
+
+runNonPrettifyBenchmark();
+runPrettifyBenchmark();
