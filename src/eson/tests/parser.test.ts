@@ -268,13 +268,6 @@ strictEqual(parser.parse('`(${new Array()})`'), `(${[]})`);
 
 strictEqual(parser.parse('`(${["foo", "bar"]})`'), `(${['foo', 'bar']})`);
 
-strictEqual(
-  parser.parse('`foo${3, 4}`'),
-  // @ts-expect-error Test sequences
-  // eslint-disable-next-line no-sequences
-  `foo${(3, 4)}`,
-);
-
 strictEqual(parser.parse('`foo\nbar`'), 'foo\nbar');
 
 strictEqual(parser.parse('`foo\rbar`'), 'foo\rbar');
@@ -373,74 +366,31 @@ throws(() => {
   parser.parse('({ `foo`: 3 })');
 }, SyntaxError);
 
-deepStrictEqual(parser.parse('({ [`foo`]: 3 })'), {
-  foo: 3,
-});
-
-deepStrictEqual(parser.parse('({ foo: "bar" }, { ...{ a: true } })'), {
-  a: true,
-});
-
-deepStrictEqual(parser.parse('"", {}'), {});
-
-/**
- * ComputedProperty
- */
-
-throws(() => {
-  parser.parse('({ []: true })');
-}, SyntaxError);
-
-deepStrictEqual(parser.parse('({ [`a${"b"}c`]: null, })'), {
-  abc: null,
-});
-
-throws(() => {
-  parser.parse('({ ["foo"] }))');
-}, SyntaxError);
-
-/**
- * PropertyShorthand
- */
-
-throws(() => {
-  parser.parse('({ foo })');
-}, new ReferenceError('foo is not defined'));
-
-/**
- * SpreadElement
- */
-
-deepStrictEqual(parser.parse('({ foo: "bar", ...{ baz: "qux" } })'), {
-  foo: 'bar',
-  baz: 'qux',
-});
-
-deepStrictEqual(parser.parse('({ ...[3] })'), { 0: 3 });
-
-throws(() => {
-  parser.parse('[...3]');
-}, TypeError);
-
-deepStrictEqual(parser.parse('[...[1, [2]]]'), [...[1, [2]]]);
-
 /**
  * UnaryExpression
  */
 
-strictEqual(parser.parse('+123'), +123);
-
-strictEqual(parser.parse('+ 123'), +123);
+throws(() => {
+  parser.parse('+ 123');
+}, SyntaxError);
 
 strictEqual(parser.parse('-123'), -123);
 
-strictEqual(parser.parse('- 123'), -123);
+throws(() => {
+  parser.parse('- 123');
+}, SyntaxError);
 
-strictEqual(parser.parse('+-123'), Number(-123));
+throws(() => {
+  parser.parse('+-123');
+}, SyntaxError);
 
-strictEqual(parser.parse('-+-123'), -Number(-123));
+throws(() => {
+  parser.parse('-+-123');
+}, SyntaxError);
 
-strictEqual(parser.parse('+-+-123'), Number(-Number(-123)));
+throws(() => {
+  parser.parse('+-+-123');
+}, SyntaxError);
 
 throws(() => {
   parser.parse('--123');
@@ -450,27 +400,21 @@ throws(() => {
   parser.parse('++123');
 }, SyntaxError);
 
-strictEqual(parser.parse('-(-123)'), -(-123));
+throws(() => {
+  parser.parse('-(-123)');
+});
 
-strictEqual(parser.parse('-(+123)'), -+123);
+throws(() => {
+  parser.parse('-(+123)');
+});
 
-strictEqual(parser.parse('-(+-123)'), -Number(-123));
+throws(() => {
+  parser.parse('-(+-123)');
+});
 
-strictEqual(parser.parse('-+-+-(+-123)'), -Number(-Number(-Number(-123))));
-
-strictEqual(parser.parse('-1,-2'), -2);
-
-strictEqual(parser.parse('+1,-2'), -2);
-
-strictEqual(parser.parse('3,(4)'), 4);
-
-strictEqual(
-  parser.parse('(-3, 4)'),
-  // @ts-expect-error Test sequences
-  (-3, 4),
-);
-
-strictEqual(parser.parse('-(3, 4)'), -4);
+throws(() => {
+  parser.parse('-+-+-(+-123)');
+});
 
 /**
  * NewExpression
@@ -561,24 +505,6 @@ strictEqual(parser.parse('( null )'), null);
 deepStrictEqual(parser.parse('([true, (false), ((({})))])'), [true, false, {}]);
 
 /**
- * SequenceExpression
- */
-
-strictEqual(parser.parse('"foo", "bar", "baz"'), 'baz');
-
-strictEqual(parser.parse('(1, 2, 3)'), 3);
-
-strictEqual(parser.parse('3, 4'), 4);
-
-throws(() => {
-  parser.parse('3,');
-}, new SyntaxError('Unexpected end of input'));
-
-throws(() => {
-  parser.parse(',3');
-}, SyntaxError);
-
-/**
  * RegExpLiteral
  */
 
@@ -654,23 +580,21 @@ deepStrictEqual(
   [],
 );
 
-strictEqual(
-  parser.parse(`
+deepStrictEqual(
+  parser.parse(`[
     'foo',//test
     //test
     'bar'//test
-  `),
-  'bar',
+  ]`),
+  ['foo', 'bar'],
 );
 
-strictEqual(
-  parser.parse(`
-    +//test
+deepStrictEqual(
+  parser.parse(`[
     34,//test
-    -//test
-    5e6//test
-  `),
-  -5e6,
+    -5e6//test
+  ]`),
+  [34, -5e6],
 );
 
 deepStrictEqual(
@@ -712,7 +636,7 @@ strictEqual(parser.parse(' /*  */ '), undefined);
 
 strictEqual(parser.parse('/* Hello world! */'), undefined);
 
-strictEqual(parser.parse('/**/1/*/**/, /** //*/2/**/'), 2);
+deepStrictEqual(parser.parse('[/**/1/*/**/, /** //*/2/**/]'), [1, 2]);
 
 deepStrictEqual(
   parser.parse(`[/*
@@ -730,24 +654,22 @@ deepStrictEqual(
   [],
 );
 
-strictEqual(
-  parser.parse(`/*
+deepStrictEqual(
+  parser.parse(`[/*
     */'foo',/*
     *///test
     /*
     */'bar'/*
-  */`),
-  'bar',
+  */]`),
+  ['foo', 'bar'],
 );
 
-strictEqual(
-  parser.parse(`/*
-    */+/*
+deepStrictEqual(
+  parser.parse(`[/*
     */34,/*/
-    */-/*
-    */5e6/*
-  */`),
-  -5e6,
+    */-5e6/*
+  */]`),
+  [34, -5e6],
 );
 
 deepStrictEqual(

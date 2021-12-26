@@ -3,7 +3,7 @@ import { join } from 'path';
 import { ESON } from '../eson';
 import { benchmark } from './utils/benchmark';
 
-const RUN_COUNT = 50000;
+const RUN_COUNT = 100;
 const TEST_FILES_DIR = join(process.cwd(), 'src', 'eson', 'tests', 'files');
 
 const runBenchmark = async () => {

@@ -1,113 +1,7 @@
-import { Parser as BaseParser, Pattern } from '../parser';
-import { ParserContext, ParserOptions, UnaryOperator } from './types';
+import { stringifyString } from '../ts-grammar';
+import { ParserOptions, Pattern, UnaryOperator } from './types';
 
-const UNDERSCORE_REGEXP = /_/g;
-
-const AL = 'a';
-const ASTERISK = '*';
-const AU = 'A';
-const BACKTICK = '`';
-const BL = 'b';
-const BSLASH = '\\';
-const BU = 'B';
-const COLON = ':';
-const COMMA = ',';
-const CR = '\r';
-const DOLLAR = '$';
-const DOT = '.';
-const DQ = '"';
-const EL = 'e';
-const EU = 'E';
-const FF = '';
-const FL = 'f';
-const FSLASH = '/';
-const FU = 'F';
-const GL = 'g';
-const IL = 'i';
-const LBRACKET = '[';
-const LCURLY = '{';
-const LF = '\n';
-const LPAREN = '(';
-const MINUS = '-';
-const ML = 'm';
-const NL = 'n';
-const NINE = '9';
-const OL = 'o';
-const ONE = '1';
-const OU = 'O';
-const PLUS = '+';
-const RBRACKET = ']';
-const RCURLY = '}';
-const RL = 'r';
-const RPAREN = ')';
-const SEVEN = '7';
-const SL = 's';
-const SPACE = ' ';
-const SQ = "'";
-const TAB = '\t';
-const TL = 't';
-const UL = 'u';
-const US = '_';
-const VL = 'v';
-const XL = 'x';
-const XU = 'X';
-const YL = 'y';
-const ZERO = '0';
-const ZL = 'z';
-const ZU = 'Z';
-
-const ALPHA_L_RANGE = `${AL}-${ZL}` as const;
-const ALPHA_U_RANGE = `${AU}-${ZU}` as const;
-const BINARY_DIGIT_RANGE = `${ZERO}-${ONE}` as const;
-const DIGIT_RANGE = `${ZERO}-${NINE}` as const;
-const HEX_ALPHA_L_RANGE = `${AL}-${FL}` as const;
-const HEX_ALPHA_U_RANGE = `${AU}-${FU}` as const;
-const OCTAL_DIGIT_RANGE = `${ZERO}-${SEVEN}` as const;
-
-const R_BINARY_DIGIT = new RegExp(`^[${BINARY_DIGIT_RANGE}]$`);
-const R_BINARY_DIGIT_US = new RegExp(`^[${BINARY_DIGIT_RANGE}${US}]$`);
-const R_BINARY_PREFIX = new RegExp(`^[${BL}${BU}]$`);
-const R_DIGIT = new RegExp(`^[${DIGIT_RANGE}]$`);
-const R_DIGIT_DOT = new RegExp(`^[${DIGIT_RANGE}${DOT}]$`);
-const R_DIGIT_US = new RegExp(`^[${DIGIT_RANGE}${US}]$`);
-const R_EXPONENT = new RegExp(`^[${EL}${EU}]$`);
-const R_HEX_DIGIT = new RegExp(
-  `^[${DIGIT_RANGE}${HEX_ALPHA_U_RANGE}${HEX_ALPHA_L_RANGE}]$`,
-);
-const R_HEX_DIGIT_US = new RegExp(
-  `^[${DIGIT_RANGE}${HEX_ALPHA_U_RANGE}${HEX_ALPHA_L_RANGE}${US}]$`,
-);
-const R_HEX_PREFIX = new RegExp(`^[${XL}${XU}]$`);
-const R_IDENTIFIER_START = new RegExp(
-  `^[${ALPHA_L_RANGE}${ALPHA_U_RANGE}${US}${DOLLAR}]$`,
-);
-const R_IDENTIFIER_TAIL = new RegExp(
-  `^[${ALPHA_L_RANGE}${ALPHA_U_RANGE}${US}${DOLLAR}${DIGIT_RANGE}]$`,
-);
-const R_KEY_START = new RegExp(`^[${DQ}${SQ}${DOT}${DIGIT_RANGE}]$`);
-const R_NEWLINE = new RegExp(`^[${LF}${CR}]$`);
-const R_NOT_FSLASH = new RegExp(`^[^${FSLASH}]$`);
-const R_NOT_NEWLINE = new RegExp(`^[^${LF}${CR}]$`);
-const R_OCTAL_DIGIT = new RegExp(`^[${OCTAL_DIGIT_RANGE}]$`);
-const R_OCTAL_DIGIT_US = new RegExp(`^[${OCTAL_DIGIT_RANGE}${US}]$`);
-const R_OCTAL_PREFIX = new RegExp(`^[${OL}${OU}]$`);
-const R_REGEXP_FLAG = new RegExp(`^[${GL}${IL}${ML}${SL}${UL}${YL}]$`);
-const R_SPACE = new RegExp(`^[${SPACE}${TAB}${LF}${CR}${FF}]$`);
-const R_UNARY = new RegExp(`^[${PLUS}${MINUS}]$`);
-
-const SEQ_BLOCK_COMMENT_END = [ASTERISK, FSLASH] as const;
-const SEQ_ELLIPSIS = [DOT, DOT, DOT] as const;
-const SEQ_TEMPLATE_ELEMENT_START = [DOLLAR, LCURLY] as const;
-
-const I_INFINITY = 'Infinity';
-const I_NAN = 'NaN';
-const I_FALSE = 'false';
-const I_NULL = 'null';
-const I_TRUE = 'true';
-const I_UNDEFINED = 'undefined';
-const I_NEW = 'new';
-
-const GlobalVariables: Record<string, unknown> = {
+const globals: Record<string, unknown> = {
   Array,
   Boolean,
   Date,
@@ -127,134 +21,223 @@ const GlobalVariables: Record<string, unknown> = {
   URIError,
 };
 
-class Parser extends BaseParser {
+const patterns = {
+  binaryDigit: (c: string) => {
+    return c === '0' || c === '1';
+  },
+  decimalDigit: (c: string) => {
+    return c >= '0' && c <= '9';
+  },
+  hexDigit: (c: string) => {
+    return (
+      (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+    );
+  },
+  identifierStart: (c: string) => {
+    return (
+      (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c === '_' || c === '$'
+    );
+  },
+  identifierTail: (c: string) => {
+    return (
+      (c >= 'a' && c <= 'z') ||
+      (c >= 'A' && c <= 'Z') ||
+      c === '_' ||
+      c === '$' ||
+      (c >= '0' && c <= '9')
+    );
+  },
+  notFslash: (c: string) => {
+    return Boolean(c) && c !== '/';
+  },
+  numberStart: (c: string) => {
+    return (c >= '0' && c <= '9') || c === '-' || c === '.';
+  },
+  octalDigit: (c: string) => {
+    return c >= '0' && c <= '7';
+  },
+  regExpFlag: (c: string) => {
+    return (
+      c === 'g' || c === 'i' || c === 'm' || c === 's' || c === 'u' || c === 'y'
+    );
+  },
+  space: (c: string) => {
+    return c === ' ' || c === '\t' || c === '\n' || c === '\r' || c === '';
+  },
+  valueStart: (c: string) => {
+    return c === '"' || c === "'" || c === '.' || (c >= '0' && c <= '9');
+  },
+};
+
+class Parser {
+  data = '';
   errors: unknown[] = [];
+  index = 0;
   isStart = true;
   options: ParserOptions = {};
+
+  private _consume() {
+    this.isStart = false;
+
+    if (this.index >= this.data.length) {
+      this._error();
+    }
+
+    return this.data[this.index++];
+  }
+
+  private _consumeChar<C extends string>(pattern: C) {
+    const char = this.data[this.index];
+    return char === pattern ? (this._consume() as C) : this._error();
+  }
+
+  private _consumeMany(length = 1) {
+    this.isStart = false;
+
+    if (this.index + length > this.data.length) {
+      this._error();
+    }
+
+    const start = this.index;
+    this.index += length;
+    return this.data.slice(start, this.index);
+  }
+
+  private _consumePattern(pattern: Pattern) {
+    const char = this.data[this.index] ?? '';
+    return pattern(char) ? this._consume() : this._error();
+  }
+
+  private _error(): string {
+    if (this.data[this.index]) {
+      const char = stringifyString(this.data[this.index] ?? '');
+      throw new SyntaxError(
+        `Unexpected character ${char} at index ${this.index}`,
+      );
+    } else {
+      throw new SyntaxError('Unexpected end of input');
+    }
+  }
 
   private consumeIdentifier() {
     let name = '';
 
-    name += this._one(R_IDENTIFIER_START);
-    name += this._star(R_IDENTIFIER_TAIL);
+    name += this._consumePattern(patterns.identifierStart);
+
+    while (patterns.identifierTail(this.data[this.index] ?? '')) {
+      name += this._consume();
+    }
 
     return name;
   }
 
-  private consumeInteger(
-    digitPattern: Pattern,
-    digitOrUnderscorePattern: Pattern,
-  ) {
+  private consumeInteger(pattern: Pattern) {
     let integer = '';
 
-    integer += this._one(digitPattern);
+    integer += this._consumePattern(pattern);
 
-    while (this._test(digitOrUnderscorePattern)) {
-      integer += this._optional(US);
-      integer += this._one(digitPattern);
+    while (
+      pattern(this.data[this.index] ?? '') ||
+      this.data[this.index] === '_'
+    ) {
+      if (this.data[this.index] === '_') {
+        integer += this._consume();
+      }
+
+      integer += this._consumePattern(pattern);
     }
 
-    return integer.replace(UNDERSCORE_REGEXP, '');
+    return integer.replace(/_/g, '');
   }
 
   private getVariable(name: string): any {
-    if (!Object.prototype.hasOwnProperty.call(GlobalVariables, name)) {
+    if (globals[name] === undefined) {
       this.errors.push(new ReferenceError(`${name} is not defined`));
       return undefined;
     }
 
-    return GlobalVariables[name];
+    return globals[name];
   }
 
-  private parseArrayExpression(context: ParserContext) {
+  private parseArrayExpression() {
     this._consume();
 
-    return this.parseElements(context, RBRACKET);
+    return this.parseElements(']');
   }
 
-  private parseElements(context: ParserContext, closeChar: string) {
+  private parseElements(closeChar: string) {
     const elements: unknown[] = [];
     let i = 0;
 
     this.parseSpace();
 
-    while (this._testNot(closeChar)) {
-      if (this._optional(COMMA)) {
+    while (this.data[this.index] !== closeChar) {
+      if (this.data[this.index] === ',') {
+        this._consume();
         elements.length = ++i;
-
         this.parseSpace();
-
         continue;
       }
 
-      if (this._optionalSequence(SEQ_ELLIPSIS)) {
-        const spreadElement = this.parseGroupExpression(context);
-
-        elements.push(...spreadElement);
-
-        i = elements.length;
-      } else {
-        elements[i] = this.parseGroupExpression(context);
-        i++;
-      }
+      elements[i] = this.parseGroupExpression();
+      i++;
 
       this.parseSpace();
 
-      if (this._optional(COMMA)) {
+      if (this.data[this.index] === ',') {
+        this._consume();
         this.parseSpace();
       } else {
         break;
       }
     }
 
-    this._one(closeChar);
+    this._consumeChar(closeChar);
 
     return elements;
   }
 
-  private parseGroupExpression(context: ParserContext): any {
-    if (this._optional(LPAREN)) {
+  private parseGroupExpression(): any {
+    if (this.data[this.index] === '(') {
+      this._consume();
       this.parseSpace();
 
-      const value = this.parseSequenceExpression({
-        ...context,
-        unary: null,
-      });
+      const value = this.parseGroupExpression();
 
       this.parseSpace();
-      this._one(RPAREN);
+      this._consumeChar(')');
 
       return value;
     }
 
-    return this.parseUnaryExpression(context);
+    return this.parseValue();
   }
 
-  private parseIdentifier(context: ParserContext) {
+  private parseIdentifier() {
     const name = this.consumeIdentifier();
 
     switch (name) {
-      case I_INFINITY:
+      case 'Infinity':
         return Infinity;
-      case I_NAN:
+      case 'NaN':
         return NaN;
-      case I_FALSE:
+      case 'false':
         return false;
-      case I_NULL:
+      case 'null':
         return null;
-      case I_TRUE:
+      case 'true':
         return true;
-      case I_UNDEFINED:
+      case 'undefined':
         return undefined;
-      case I_NEW:
-        return this.parseNewExpression(context);
+      case 'new':
+        return this.parseNewExpression();
       default:
         this.errors.push(new ReferenceError(`${name} is not defined`));
         return undefined;
     }
   }
 
-  private parseNewExpression(context: ParserContext) {
+  private parseNewExpression() {
     this.parseSpace();
 
     const name = this.consumeIdentifier();
@@ -264,8 +247,9 @@ class Parser extends BaseParser {
 
     let args: unknown[] = [];
 
-    if (this._optional(LPAREN)) {
-      args = this.parseElements(context, RPAREN);
+    if (this.data[this.index] === '(') {
+      this._consume();
+      args = this.parseElements(')');
     }
 
     try {
@@ -278,40 +262,46 @@ class Parser extends BaseParser {
   }
 
   private parseNumberLiteral() {
-    const start = this.char;
+    const start = this.data[this.index];
     let number = '';
 
-    if (start !== DOT) {
-      if (start === ZERO) {
+    if (start === '-') {
+      number += this._consume();
+    }
+
+    if (start !== '.') {
+      if (start === '0') {
         number += this._consume();
 
-        if (this._test(R_HEX_PREFIX)) {
+        const char = this.data[this.index];
+        if (char === 'x' || char === 'X') {
           number += this._consume();
-          number += this.consumeInteger(R_HEX_DIGIT, R_HEX_DIGIT_US);
+          number += this.consumeInteger(patterns.hexDigit);
           return Number(number);
-        } else if (this._test(R_BINARY_PREFIX)) {
+        } else if (char === 'b' || char === 'B') {
           number += this._consume();
-          number += this.consumeInteger(R_BINARY_DIGIT, R_BINARY_DIGIT_US);
+          number += this.consumeInteger(patterns.binaryDigit);
           return Number(number);
-        } else if (this._test(R_OCTAL_PREFIX)) {
+        } else if (char === 'o' || char === 'O') {
           number += this._consume();
-          number += this.consumeInteger(R_OCTAL_DIGIT, R_OCTAL_DIGIT_US);
+          number += this.consumeInteger(patterns.octalDigit);
           return Number(number);
         }
       } else {
-        number += this.consumeInteger(R_DIGIT, R_DIGIT_US);
+        number += this.consumeInteger(patterns.decimalDigit);
       }
 
-      if (this._optional(NL)) {
+      if (this.data[this.index] === 'n') {
+        this._consume();
         return BigInt(number);
       }
     }
 
-    if (this._test(DOT)) {
+    if (this.data[this.index] === '.') {
       number += this._consume();
 
-      if (this._test(R_DIGIT)) {
-        number += this.consumeInteger(R_DIGIT, R_DIGIT_US);
+      if (patterns.decimalDigit(this.data[this.index] ?? '')) {
+        number += this.consumeInteger(patterns.decimalDigit);
       }
 
       if (number.length === 1) {
@@ -319,16 +309,20 @@ class Parser extends BaseParser {
       }
     }
 
-    if (this._test(R_EXPONENT)) {
+    if (this.data[this.index] === 'e' || this.data[this.index] === 'E') {
       number += this._consume();
-      number += this._optional(R_UNARY);
-      number += this.consumeInteger(R_DIGIT, R_DIGIT_US);
+
+      if (this.data[this.index] === '-' || this.data[this.index] === '+') {
+        number += this._consume();
+      }
+
+      number += this.consumeInteger(patterns.decimalDigit);
     }
 
     return Number(number);
   }
 
-  private parseObjectExpression(context: ParserContext) {
+  private parseObjectExpression() {
     if (this.options.strict && this.isStart) {
       this._error();
     }
@@ -338,47 +332,19 @@ class Parser extends BaseParser {
     this._consume();
     this.parseSpace();
 
-    while (this._testNot(RCURLY)) {
-      let key = '';
-
-      if (this._optionalSequence(SEQ_ELLIPSIS)) {
-        const value = this.parseGroupExpression(context);
-
-        Object.assign(object, value);
-      } else {
-        let isIdentifier = false;
-
-        if (this._optional(LBRACKET)) {
-          key += this.parseGroupExpression(context);
-
-          this._one(RBRACKET);
-        } else if (this._test(R_KEY_START)) {
-          key += this.parseValue(context);
-        } else {
-          key += this.consumeIdentifier();
-          isIdentifier = true;
-        }
-
-        this.parseSpace();
-
-        if (this._optional(COLON)) {
-          this.parseSpace();
-
-          object[key] = this.parseGroupExpression(context);
-        } else if (isIdentifier) {
-          if (Object.prototype.hasOwnProperty.call(GlobalVariables, key)) {
-            object[key] = GlobalVariables[key];
-          } else {
-            this.errors.push(new ReferenceError(`${key} is not defined`));
-          }
-        } else {
-          this._error();
-        }
-      }
+    while (this.data[this.index] !== '}') {
+      const key = patterns.valueStart(this.data[this.index] ?? '')
+        ? this.parseValue()
+        : this.consumeIdentifier();
 
       this.parseSpace();
+      this._consumeChar(':');
+      this.parseSpace();
+      object[key] = this.parseGroupExpression();
+      this.parseSpace();
 
-      if (this._optional(COMMA)) {
+      if (this.data[this.index] === ',') {
+        this._consume();
         this.parseSpace();
       } else {
         break;
@@ -386,7 +352,7 @@ class Parser extends BaseParser {
     }
 
     this.parseSpace();
-    this._one(RCURLY);
+    this._consumeChar('}');
 
     return object;
   }
@@ -397,72 +363,58 @@ class Parser extends BaseParser {
     let source = '';
     let flags = '';
 
-    source += this._one(R_NOT_FSLASH);
+    source += this._consumePattern(patterns.notFslash);
 
-    while (this._testNot(FSLASH)) {
-      if (this._test(BSLASH)) {
-        source += this._consume(2);
+    while (this.data[this.index] !== '/') {
+      if (this.data[this.index] === '\\') {
+        source += this._consumeMany(2);
       }
 
-      if (this._test(LBRACKET)) {
+      if (this.data[this.index] === '[') {
         source += this._consume();
 
-        while (this._testNot(RBRACKET)) {
-          source += this._optional(BSLASH);
+        while (this.data[this.index] !== ']') {
+          if (this.data[this.index] === '\\') {
+            source += this._consume();
+          }
+
           source += this._consume();
         }
 
-        source += this._one(RBRACKET);
+        source += this._consumeChar(']');
       } else {
-        source += this._one(R_NOT_FSLASH);
+        source += this._consumePattern(patterns.notFslash);
       }
     }
 
-    this._one(FSLASH);
+    this._consumeChar('/');
 
-    flags += this._star(R_REGEXP_FLAG);
+    while (patterns.regExpFlag(this.data[this.index] ?? '')) {
+      flags += this._consume();
+    }
 
     return new RegExp(source, flags);
   }
 
-  private parseSequenceExpression(context: ParserContext): any {
-    const expressions = [this.parseGroupExpression(context)];
-
-    this.parseSpace();
-
-    while (this._optional(COMMA)) {
-      this.parseSpace();
-
-      expressions.push(
-        this.parseSequenceExpression({
-          ...context,
-          unary: null,
-        }),
-      );
-    }
-
-    return expressions[expressions.length - 1];
-  }
-
   private parseSingleCharacterEscapeSequence() {
-    switch (this.char) {
-      case ZERO:
+    switch (this.data[this.index]) {
+      case '0':
         return '\0';
-      case SQ:
+      case "'":
         return "'";
-      case BSLASH:
+      case '\\':
         return '\\';
-      case NL:
+      case 'n':
         return '\n';
-      case RL:
+      case 'r':
         return '\r';
-      case VL:
+      case 'v':
         return '\v';
-      case TL:
+      case 't':
         return '\t';
-      case BL:
+      case 'b':
         return '\b';
-      case FL:
+      case 'f':
         return '\f';
       default:
         return undefined;
@@ -473,29 +425,42 @@ class Parser extends BaseParser {
     const isStart = this.isStart;
     let space = '';
 
-    while (this.char) {
-      if (this._test(R_SPACE)) {
+    while (this.data[this.index]) {
+      if (patterns.space(this.data[this.index] ?? '')) {
         space += this._consume();
-        space += this._star(R_SPACE);
-      } else if (this._test(FSLASH)) {
-        if (this._test(FSLASH, 1)) {
-          space += this._consume(2);
-          space += this._star(R_NOT_NEWLINE);
-        } else if (this._test(ASTERISK, 1)) {
-          space += this._consume(2);
 
-          if (!this.char) {
+        while (patterns.space(this.data[this.index] ?? '')) {
+          space += this._consume();
+        }
+      } else if (this.data[this.index] === '/') {
+        if (this.data[this.index + 1] === '/') {
+          space += this._consumeMany(2);
+
+          while (
+            this.data[this.index] &&
+            this.data[this.index] !== '\n' &&
+            this.data[this.index] !== '\r'
+          ) {
+            space += this._consume();
+          }
+        } else if (this.data[this.index + 1] === '*') {
+          space += this._consumeMany(2);
+
+          if (!this.data[this.index]) {
             this._error();
           }
 
-          while (this.char) {
-            if (this._testSequence(SEQ_BLOCK_COMMENT_END)) {
-              space += this._consume(2);
+          while (this.data[this.index]) {
+            if (
+              this.data[this.index] === '*' &&
+              this.data[this.index + 1] === '/'
+            ) {
+              space += this._consumeMany(2);
               break;
             } else {
               space += this._consume();
 
-              if (!this.char) {
+              if (!this.data[this.index]) {
                 this._error();
               }
             }
@@ -513,8 +478,8 @@ class Parser extends BaseParser {
     return space;
   }
 
-  private parseStringLiteral(context: ParserContext) {
-    const quote = this.char;
+  private parseStringLiteral() {
+    const quote = this.data[this.index];
 
     if (!quote) {
       return this._error();
@@ -524,34 +489,47 @@ class Parser extends BaseParser {
 
     this._consume();
 
-    while (this._testNot(quote)) {
-      if (this._test(R_NEWLINE) && quote !== BACKTICK) {
+    while (this.data[this.index] !== quote) {
+      if (
+        (this.data[this.index] === '\n' || this.data[this.index] === '\r') &&
+        quote !== '`'
+      ) {
         this._error();
-      } else if (this._optional(BSLASH)) {
+      } else if (this.data[this.index] === '\\') {
+        this._consume();
+
         const char = this.parseSingleCharacterEscapeSequence();
 
         if (char) {
           string += char;
           this._consume();
-        } else if (this._test(R_NEWLINE)) {
-          const cr = this._optional(CR);
-
+        } else if (
+          this.data[this.index] === '\n' ||
+          this.data[this.index] === '\r'
+        ) {
+          const cr = this.data[this.index] === '\r' ? this._consume() : '';
           if (cr) {
-            this._optional(LF);
+            if (this.data[this.index] === '\n') {
+              this._consume();
+            }
           } else {
-            this._one(LF);
+            this._consumeChar('\n');
           }
-        } else if (this._optional(UL)) {
+        } else if (this.data[this.index] === 'u') {
           let hex = '';
 
-          if (this._optional(LCURLY)) {
-            hex += this._one(R_HEX_DIGIT);
+          this._consume();
 
-            while (this._test(R_HEX_DIGIT)) {
+          if (this.data[this.index] === '{') {
+            this._consume();
+
+            hex += this._consumePattern(patterns.hexDigit);
+
+            while (patterns.hexDigit(this.data[this.index] ?? '')) {
               hex += this._consume();
             }
 
-            this._one(RCURLY);
+            this._consumeChar('}');
 
             let value = parseInt(hex, 16);
 
@@ -568,97 +546,71 @@ class Parser extends BaseParser {
               string += String.fromCodePoint(value);
             }
           } else {
-            hex += this._one(R_HEX_DIGIT);
-            hex += this._one(R_HEX_DIGIT);
-            hex += this._one(R_HEX_DIGIT);
-            hex += this._one(R_HEX_DIGIT);
+            hex += this._consumePattern(patterns.hexDigit);
+            hex += this._consumePattern(patterns.hexDigit);
+            hex += this._consumePattern(patterns.hexDigit);
+            hex += this._consumePattern(patterns.hexDigit);
 
             string += String.fromCodePoint(parseInt(hex, 16));
           }
-        } else if (this._optional(XL)) {
+        } else if (this.data[this.index] === 'x') {
+          this._consume();
+
           let hex = '';
 
-          hex += this._one(R_HEX_DIGIT);
-          hex += this._one(R_HEX_DIGIT);
+          hex += this._consumePattern(patterns.hexDigit);
+          hex += this._consumePattern(patterns.hexDigit);
 
           string += String.fromCodePoint(parseInt(hex, 16));
         } else {
           string += this._consume();
         }
       } else if (
-        quote === BACKTICK &&
-        this._optionalSequence(SEQ_TEMPLATE_ELEMENT_START)
+        quote === '`' &&
+        this.data[this.index] === '$' &&
+        this.data[this.index + 1] === '{'
       ) {
-        string += this.parseSequenceExpression(context);
+        this._consumeMany(2);
 
-        this._one(RCURLY);
+        string += this.parseGroupExpression();
+
+        this._consumeChar('}');
       } else {
         string += this._consume();
       }
     }
 
-    this._one(quote);
+    this._consumeChar(quote);
 
     return string;
   }
 
-  private parseUnaryExpression(context: ParserContext): any {
-    let operator: UnaryOperator = null;
-
-    if (context.unary === PLUS) {
-      operator = this._optional(MINUS) as UnaryOperator;
-    } else if (context.unary === MINUS) {
-      operator = this._optional(PLUS) as UnaryOperator;
-    } else {
-      operator = this._optional(R_UNARY) as UnaryOperator;
-    }
-
-    if (operator) {
-      this.parseSpace();
-    }
-
-    const value = operator
-      ? this.parseGroupExpression({
-          ...context,
-          unary: operator,
-        })
-      : this.parseValue(context);
-
-    return operator === MINUS ? -value : value;
-  }
-
-  private parseValue(context: ParserContext) {
-    switch (this.char) {
-      case BACKTICK:
-      case DQ:
-      case SQ: {
-        return this.parseStringLiteral(context);
+  private parseValue() {
+    switch (this.data[this.index]) {
+      case '`':
+      case '"':
+      case "'": {
+        return this.parseStringLiteral();
       }
-      case LBRACKET: {
-        return this.parseArrayExpression(context);
+      case '[': {
+        return this.parseArrayExpression();
       }
-      case LCURLY: {
-        return this.parseObjectExpression(context);
+      case '{': {
+        return this.parseObjectExpression();
       }
-      case FSLASH: {
+      case '/': {
         return this.parseRegExpLiteral();
       }
       default: {
-        if (this._test(R_IDENTIFIER_START)) {
-          return this.parseIdentifier(context);
-        } else if (this._test(R_DIGIT_DOT)) {
+        if (patterns.identifierStart(this.data[this.index] ?? '')) {
+          return this.parseIdentifier();
+        } else if (patterns.numberStart(this.data[this.index] ?? '')) {
           return this.parseNumberLiteral();
         }
 
         return this._error();
       }
     }
-  }
-
-  protected _consume(length = 1) {
-    this.isStart = false;
-
-    return super._consume(length);
   }
 
   parse(data: string, options: ParserOptions = {}) {
@@ -675,9 +627,7 @@ class Parser extends BaseParser {
       return undefined;
     }
 
-    const value = this.parseSequenceExpression({
-      unary: null,
-    });
+    const value = this.parseGroupExpression();
 
     this.parseSpace();
 
@@ -695,9 +645,9 @@ class Parser extends BaseParser {
 
 const parser = new Parser();
 
-export type { ParserContext, UnaryOperator };
-export { GlobalVariables, Parser };
+export type { UnaryOperator };
+export { Parser };
 
-export const parse = (data: string) => {
-  return parser.parse(data);
+export const parse = (data: string, options: ParserOptions = {}) => {
+  return parser.parse(data, options);
 };
