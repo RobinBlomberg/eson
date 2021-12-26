@@ -266,26 +266,6 @@ strictEqual(
 
 strictEqual(parser.parse('`(${new Array()})`'), `(${[]})`);
 
-deepStrictEqual(parser.parse('new (Array)()'), []);
-
-deepStrictEqual(
-  parser.parse('new core.Array(3)', {
-    core: {
-      Array,
-    },
-  }),
-  new Array(3),
-);
-
-deepStrictEqual(
-  parser.parse('new test[`S${"e"}t`](["foo", "bar"])', {
-    test: {
-      Set,
-    },
-  }),
-  new Set(['foo', 'bar']),
-);
-
 strictEqual(parser.parse('`(${["foo", "bar"]})`'), `(${['foo', 'bar']})`);
 
 strictEqual(
@@ -411,16 +391,6 @@ throws(() => {
  * PropertyShorthand
  */
 
-deepStrictEqual(
-  parser.parse('({ foo, bar: { foo } })', { foo: 3, bar: 'baz' }),
-  {
-    foo: 3,
-    bar: {
-      foo: 3,
-    },
-  },
-);
-
 throws(() => {
   parser.parse('({ foo })');
 }, new ReferenceError('foo is not defined'));
@@ -429,20 +399,6 @@ throws(() => {
  * SpreadElement
  */
 
-deepStrictEqual(
-  parser.parse('({ foo: "bar", ...baz })', {
-    baz: {
-      abc: 123,
-      def: null,
-    },
-  }),
-  {
-    foo: 'bar',
-    abc: 123,
-    def: null,
-  },
-);
-
 deepStrictEqual(parser.parse('({ foo: "bar", ...{ baz: "qux" } })'), {
   foo: 'bar',
   baz: 'qux',
@@ -450,24 +406,9 @@ deepStrictEqual(parser.parse('({ foo: "bar", ...{ baz: "qux" } })'), {
 
 deepStrictEqual(parser.parse('({ ...[3] })'), { 0: 3 });
 
-deepStrictEqual(parser.parse('({ ...props, b: 4 })', { props: { a: 3 } }), {
-  a: 3,
-  b: 4,
-});
-
-deepStrictEqual(
-  parser.parse('[a, ...b, c]', { a: 'foo', b: ['bar', 'baz'], c: 'qux' }),
-  ['foo', 'bar', 'baz', 'qux'],
-);
-
 throws(() => {
   parser.parse('[...3]');
 }, TypeError);
-
-deepStrictEqual(
-  parser.parse('["foo", ...new Set([...values])]', { values: ['bar', 'baz'] }),
-  ['foo', ...new Set(['bar', 'baz'])],
-);
 
 deepStrictEqual(parser.parse('[...[1, [2]]]'), [...[1, [2]]]);
 
@@ -591,7 +532,7 @@ throws(() => {
 
 throws(() => {
   parser.parse('new {}');
-}, new TypeError('Constructor is not a constructor'));
+}, new SyntaxError("Unexpected character '{' at index 4"));
 
 /**
  * GroupExpression
@@ -812,196 +753,6 @@ deepStrictEqual(
 );
 
 /**
- * (variables)
- */
-
-strictEqual(parser.parse('a', { a: 3 }), 3);
-
-throws(() => {
-  parser.parse('a', { b: 3 });
-}, ReferenceError);
-
-deepStrictEqual(
-  parser.parse('({ [name]: value })', { name: 'foo', value: 'bar' }),
-  {
-    foo: 'bar',
-  },
-);
-
-throws(() => {
-  parser.parse('foo.');
-}, new SyntaxError('Unexpected end of input'));
-
-/**
- * MemberExpression
- */
-
-strictEqual(
-  parser.parse('foo.bar', {
-    foo: {
-      bar: 'baz',
-    },
-  }),
-  'baz',
-);
-
-strictEqual(
-  parser.parse('foo.bar.baz', {
-    foo: {
-      bar: {
-        baz: 'qux',
-      },
-    },
-  }),
-  'qux',
-);
-
-strictEqual(parser.parse('({ foo: "bar" }).foo'), 'bar');
-
-throws(() => {
-  parser.parse('({ foo: "bar" }).3');
-}, SyntaxError);
-
-strictEqual(parser.parse('["foo"][0]'), 'foo');
-
-strictEqual(parser.parse('["foo", "bar"][1]'), 'bar');
-
-strictEqual(parser.parse('[[7]][0][0]'), 7);
-
-strictEqual(
-  parser.parse('foo.bar["baz"][0]', {
-    foo: {
-      bar: {
-        baz: 'qux',
-      },
-    },
-  }),
-  'q',
-);
-
-throws(() => {
-  parser.parse('foo.bar');
-}, new ReferenceError('foo is not defined'));
-
-/**
- * ChainExpression
- */
-
-strictEqual(
-  parser.parse('foo?.bar', {
-    foo: {
-      bar: 'qux',
-    },
-  }),
-  'qux',
-);
-
-strictEqual(
-  parser.parse('foo?.bar', {
-    foo: undefined,
-  }),
-  undefined,
-);
-
-strictEqual(
-  parser.parse('foo?.["bar"]', {
-    foo: {
-      bar: 'qux',
-    },
-  }),
-  'qux',
-);
-
-strictEqual(
-  parser.parse('foo?.["bar"]', {
-    foo: undefined,
-  }),
-  undefined,
-);
-
-throws(() => {
-  parser.parse('foo?["bar"]', {
-    foo: undefined,
-  });
-}, SyntaxError);
-
-throws(() => {
-  parser.parse("foo.['bar']");
-}, new SyntaxError("Unexpected character '[' at index 4"));
-
-strictEqual(
-  parser.parse("foo.bar?.baz['qux'][1]", {
-    foo: {
-      bar: {
-        baz: {
-          qux: 'fizz',
-        },
-      },
-    },
-  }),
-  'i',
-);
-
-strictEqual(
-  parser.parse("foo.bar?.baz['qux'][1].test", {
-    foo: {
-      bar: {
-        baz: {
-          qux: 'fizz',
-        },
-      },
-    },
-  }),
-  undefined,
-);
-
-/**
- * AssignmentExpression
- */
-
-strictEqual(parser.parse('a=1'), 1);
-
-strictEqual(parser.parse('fullName="Frank",fullName'), 'Frank');
-
-strictEqual(
-  parser.parse("version = '0.5.4', `MyApp v${version}`"),
-  'MyApp v0.5.4',
-);
-
-strictEqual(parser.parse('(a = 3, `${a}`)'), '3');
-
-deepStrictEqual(
-  parser.parse('object.value = 3, object', {
-    object: {
-      foo: true,
-    },
-  }),
-  {
-    foo: true,
-    value: 3,
-  },
-);
-
-deepStrictEqual(
-  parser.parse('foo.bar["baz"] = "fizz", foo', {
-    foo: {
-      bar: {
-        baz: 'qux',
-      },
-    },
-  }),
-  {
-    bar: {
-      baz: 'fizz',
-    },
-  },
-);
-
-throws(() => {
-  parser.parse('751=871');
-}, SyntaxError);
-
-/**
  * (files)
  */
 
@@ -1019,53 +770,3 @@ readFile(join(TEST_FILES_DIR, 'data.js'), 'utf8', (error, data) => {
     reg: new RegExp('^foo$', 'g'),
   });
 });
-
-readFile(join(TEST_FILES_DIR, 'circular.js'), 'utf8', (error, data) => {
-  if (error) {
-    throw error;
-  }
-
-  const parent: { child?: unknown; name: string } = {
-    name: 'John',
-  };
-  const child = {
-    name: 'Elsa',
-    parent,
-  };
-  parent.child = child;
-
-  deepStrictEqual(parser.parse(data), parent);
-});
-
-// readFile(
-//   join(TEST_FILES_DIR, 'playground.js'),
-//   'utf8',
-//   (error, data) => {
-//     if (error) {
-//       throw error;
-//     }
-
-//     let a;
-//     let b;
-//     let parsedSucceeded = false;
-
-//     try {
-//       a = eval(data);
-//       console.log(a);
-//     } catch (ex) {
-//       console.error(ex.message);
-//     }
-
-//     try {
-//       b = parser.parse(data);
-//       console.log(b);
-//       parsedSucceeded = true;
-//     } catch (ex) {
-//       console.error(ex.message);
-//     }
-
-//     if (parsedSucceeded) {
-//       deepStrictEqual(a, b);
-//     }
-//   }
-// );

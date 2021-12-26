@@ -23,7 +23,6 @@ const DOLLAR = '$';
 const DOT = '.';
 const DQ = '"';
 const EL = 'e';
-const EQ = '=';
 const EU = 'E';
 const FF = '';
 const FL = 'f';
@@ -43,7 +42,6 @@ const OL = 'o';
 const ONE = '1';
 const OU = 'O';
 const PLUS = '+';
-const QUESTION = '?';
 const RBRACKET = ']';
 const RCURLY = '}';
 const RL = 'r';
@@ -142,7 +140,6 @@ const GlobalVariables: Record<string, unknown> = {
 class Parser extends BaseParser {
   errors: unknown[] = [];
   isStart = true;
-  variables = GlobalVariables;
 
   private consumeIdentifier() {
     let name = '';
@@ -169,27 +166,13 @@ class Parser extends BaseParser {
     return integer.replace(UNDERSCORE_REGEXP, '');
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getProperty(object: any, property: any, optional: boolean) {
-    if (optional) {
-      return object?.[property];
-    }
-
-    try {
-      return object[property];
-    } catch (error: unknown) {
-      this.errors.push(error);
-      throw this.errors[0];
-    }
-  }
-
-  private getVariable(name: string) {
-    if (!Object.prototype.hasOwnProperty.call(this.variables, name)) {
+  private getVariable(name: string): any {
+    if (!Object.prototype.hasOwnProperty.call(GlobalVariables, name)) {
       this.errors.push(new ReferenceError(`${name} is not defined`));
       return undefined;
     }
 
-    return this.variables[name];
+    return GlobalVariables[name];
   }
 
   private parseArrayExpression(context: ParserContext) {
@@ -214,13 +197,13 @@ class Parser extends BaseParser {
       }
 
       if (this._optionalSequence(SEQ_ELLIPSIS)) {
-        const spreadElement = this.parseMemberExpression(context);
+        const spreadElement = this.parseGroupExpression(context);
 
         elements.push(...spreadElement);
 
         i = elements.length;
       } else {
-        elements[i] = this.parseMemberExpression(context);
+        elements[i] = this.parseGroupExpression(context);
         i++;
       }
 
@@ -238,7 +221,6 @@ class Parser extends BaseParser {
     return elements;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private parseGroupExpression(context: ParserContext): any {
     if (this._optional(LPAREN)) {
       this.parseSpace();
@@ -276,78 +258,16 @@ class Parser extends BaseParser {
       case I_NEW:
         return this.parseNewExpression(context);
       default:
-        return this.parseVariable(context, name);
+        this.errors.push(new ReferenceError(`${name} is not defined`));
+        return undefined;
     }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private parseMemberExpression(context: ParserContext): any {
-    let property;
-    let object = this.parseGroupExpression(context);
-    let parent = object;
-
-    this.parseSpace();
-
-    while (this.char) {
-      const optional = Boolean(this._optional(QUESTION));
-      const dot = this._optional(DOT);
-
-      if (dot) {
-        this.parseSpace();
-
-        if (this._test(LBRACKET)) {
-          if (!optional) {
-            this._error();
-          }
-        } else {
-          property = this.consumeIdentifier();
-          parent = object;
-          object = this.getProperty(object, property, optional);
-
-          this.parseSpace();
-
-          continue;
-        }
-      }
-
-      if (optional && !dot) {
-        this._error();
-      } else if (this._optional(LBRACKET)) {
-        this.parseSpace();
-
-        property = this.parseMemberExpression(context);
-        parent = object;
-        object = this.getProperty(object, property, optional);
-
-        this.parseSpace();
-        this._one(RBRACKET);
-        this.parseSpace();
-      } else {
-        break;
-      }
-    }
-
-    if (this._optional(EQ)) {
-      if (property === undefined) {
-        throw new SyntaxError('Invalid left-hand side in assignment');
-      }
-
-      this.parseSpace();
-
-      const value = this.parseMemberExpression(context);
-
-      parent[property] = value;
-
-      return value;
-    }
-
-    return object;
   }
 
   private parseNewExpression(context: ParserContext) {
     this.parseSpace();
 
-    const Constructor = this.parseMemberExpression(context);
+    const name = this.consumeIdentifier();
+    const Constructor = this.getVariable(name);
 
     this.parseSpace();
 
@@ -431,14 +351,14 @@ class Parser extends BaseParser {
       let key = '';
 
       if (this._optionalSequence(SEQ_ELLIPSIS)) {
-        const value = this.parseMemberExpression(context);
+        const value = this.parseGroupExpression(context);
 
         Object.assign(object, value);
       } else {
         let isIdentifier = false;
 
         if (this._optional(LBRACKET)) {
-          key += this.parseMemberExpression(context);
+          key += this.parseGroupExpression(context);
 
           this._one(RBRACKET);
         } else if (this._test(R_KEY_START)) {
@@ -453,9 +373,13 @@ class Parser extends BaseParser {
         if (this._optional(COLON)) {
           this.parseSpace();
 
-          object[key] = this.parseMemberExpression(context);
+          object[key] = this.parseGroupExpression(context);
         } else if (isIdentifier) {
-          object[key] = this.getVariable(key);
+          if (Object.prototype.hasOwnProperty.call(GlobalVariables, key)) {
+            object[key] = GlobalVariables[key];
+          } else {
+            this.errors.push(new ReferenceError(`${key} is not defined`));
+          }
         } else {
           this._error();
         }
@@ -510,9 +434,8 @@ class Parser extends BaseParser {
     return new RegExp(source, flags);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private parseSequenceExpression(context: ParserContext): any {
-    const expressions = [this.parseMemberExpression(context)];
+    const expressions = [this.parseGroupExpression(context)];
 
     this.parseSpace();
 
@@ -688,7 +611,6 @@ class Parser extends BaseParser {
     return string;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private parseUnaryExpression(context: ParserContext): any {
     let operator: UnaryOperator = null;
 
@@ -705,7 +627,7 @@ class Parser extends BaseParser {
     }
 
     const value = operator
-      ? this.parseMemberExpression({
+      ? this.parseGroupExpression({
           ...context,
           unary: operator,
         })
@@ -742,34 +664,17 @@ class Parser extends BaseParser {
     }
   }
 
-  private parseVariable(context: ParserContext, name: string) {
-    this.parseSpace();
-
-    if (this._optional(EQ)) {
-      this.parseSpace();
-
-      const value = this.parseMemberExpression(context);
-
-      this.variables[name] = value;
-
-      return value;
-    }
-
-    return this.getVariable(name);
-  }
-
   protected _consume(length = 1) {
     this.isStart = false;
 
     return super._consume(length);
   }
 
-  parse(data: string, variables: Record<string, unknown> = {}) {
+  parse(data: string) {
     this.data = data;
     this.errors = [];
     this.index = 0;
     this.isStart = true;
-    this.variables = { ...GlobalVariables, ...variables };
 
     this.parseSpace();
 
@@ -801,9 +706,6 @@ const parser = new Parser();
 export type { ParserContext, UnaryOperator };
 export { GlobalVariables, Parser };
 
-export const parse = (
-  data: string,
-  variables: Record<string, unknown> = {},
-) => {
-  return parser.parse(data, variables);
+export const parse = (data: string) => {
+  return parser.parse(data);
 };
