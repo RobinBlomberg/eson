@@ -15,7 +15,8 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint ./src",
-    "test": "tsc-watch --onSuccess \"node --enable-source-maps ./dist/index.test.js\""
+    "test": "tsc-watch --onSuccess \"node --enable-source-maps ./dist/index.test.js\"",
+    "test:benchmark": "tsc-watch --onSuccess \"node --enable-source-maps ./dist/benchmark.test.js\""
   },
   "devDependencies": {
     "@robinblomberg/eslint-config-prettier": "^0.1.4",
